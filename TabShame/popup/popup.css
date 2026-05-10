@@ -1,0 +1,331 @@
+/*
+ * popup.css
+ *
+ * Editorial / zine styling. Paper background, bold serif numbers, mono labels.
+ * Popup width is constrained by Chrome — keep it under ~420px.
+ */
+
+:root {
+  --ink: #1a1612;
+  --ink-soft: rgba(26, 22, 18, 0.6);
+  --paper: #f4ede0;
+  --peach: #ff8966;
+  --lavender: #b8a4ff;
+  --shame: #e63946;
+
+  --font-serif: "Fraunces", "Instrument Serif", Georgia, serif;
+  --font-italic: "Instrument Serif", "Fraunces", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  width: 380px;
+}
+
+.card {
+  position: relative;
+  padding: 22px 22px 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 137, 102, 0.12), rgba(184, 164, 255, 0.18)),
+    var(--paper);
+  min-height: 460px;
+}
+
+/* Header ────────────────────────────────────────────────── */
+.hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+}
+
+/* Unlock banner — shown once after casual → specific transition ─ */
+.unlock-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  background: var(--lavender);
+  color: var(--ink);
+  border-radius: 10px;
+  animation: unlockPulse 0.5s ease-out;
+}
+
+.unlock-banner[hidden] {
+  display: none;
+}
+
+.unlock-emoji {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.unlock-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.unlock-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.unlock-name {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+@keyframes unlockPulse {
+  0% { transform: scale(0.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Hero (tab count) ──────────────────────────────────────── */
+.hero-block {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.hero-count {
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 108px;
+  line-height: 0.82;
+  color: var(--shame);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-meta {
+  padding-bottom: 8px;
+}
+
+.hero-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+  margin-bottom: 4px;
+}
+
+.hero-band {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink);
+  max-width: 200px;
+  line-height: 1.25;
+}
+
+/* Score line (secondary, with breakdown) ───────────────── */
+.score-line {
+  margin-bottom: 14px;
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+  background: rgba(255, 255, 255, 0.4);
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.score-strong {
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  margin-right: 6px;
+}
+
+.score-formula {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Archetype ─────────────────────────────────────────────── */
+.archetype {
+  border-top: 1px solid rgba(26, 22, 18, 0.12);
+  padding-top: 14px;
+  margin-bottom: 16px;
+}
+
+.archetype-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.archetype-emoji {
+  font-size: 24px;
+}
+
+.archetype-name {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.archetype-desc {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+/* Stats ─────────────────────────────────────────────────── */
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tile {
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 10px;
+  padding: 12px 10px 10px;
+  text-align: center;
+}
+
+.tile-value {
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.tile-haunt-name {
+  font-size: 18px;
+  word-break: break-all;
+}
+
+.tile-haunt-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+.tile-label {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+}
+
+/* Roast ─────────────────────────────────────────────────── */
+.roast {
+  margin-bottom: 16px;
+}
+
+.roast-line {
+  margin: 0;
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.4);
+  padding: 12px 14px;
+  border-radius: 8px;
+  border-left: 2px solid var(--peach);
+}
+
+/* Actions ───────────────────────────────────────────────── */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.06s ease, opacity 0.15s ease;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.btn-secondary {
+  background: var(--peach);
+  color: var(--ink);
+}
+
+.btn-action {
+  background: var(--lavender);
+  color: var(--ink);
+}
+
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-locked {
+  background: transparent;
+  color: var(--ink-soft);
+  border: 1px dashed rgba(26, 22, 18, 0.25);
+  cursor: not-allowed;
+}
+
+/* Footer ───────────────────────────────────────────────── */
+.ftr {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  text-align: center;
+  padding-top: 10px;
+  border-top: 1px solid rgba(26, 22, 18, 0.08);
+}

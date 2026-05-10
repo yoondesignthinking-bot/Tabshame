@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TabShame</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="card" aria-busy="true">
+      <header class="hdr">
+        <span class="hdr-mark">TAB SHAME</span>
+        <span class="hdr-date" id="dateLabel"></span>
+      </header>
+
+      <div class="unlock-banner" id="unlockBanner" hidden>
+        <span class="unlock-emoji" id="unlockEmoji">🎉</span>
+        <div class="unlock-text">
+          <div class="unlock-title">You've earned your archetype</div>
+          <div class="unlock-name" id="unlockName">…</div>
+        </div>
+      </div>
+
+      <section class="hero-block">
+        <div class="hero-count" id="tabCount">--</div>
+        <div class="hero-meta">
+          <div class="hero-label" id="tabsLabel">TABS OPEN</div>
+          <div class="hero-band" id="scoreBand">reading the room…</div>
+        </div>
+      </section>
+
+      <section class="score-line">
+        <span class="score-strong" id="scoreStrong">SHAME SCORE —</span>
+        <span class="score-formula" id="scoreFormula">…</span>
+      </section>
+
+      <section class="archetype">
+        <div class="archetype-row">
+          <span class="archetype-emoji" id="archetypeEmoji">…</span>
+          <div class="archetype-name" id="archetypeName">Diagnosing…</div>
+        </div>
+        <p class="archetype-desc" id="archetypeDesc">Reading your tabs (locally, on your device).</p>
+      </section>
+
+      <section class="stats">
+        <div class="tile">
+          <div class="tile-value" id="tileDupes">–</div>
+          <div class="tile-label">DUPLICATES</div>
+        </div>
+        <div class="tile tile-haunt">
+          <div class="tile-value tile-haunt-name" id="tileHaunt">—</div>
+          <div class="tile-haunt-sub" id="tileHauntCount">no haunts yet</div>
+          <div class="tile-label">TOP HAUNT</div>
+        </div>
+      </section>
+
+      <section class="roast">
+        <p class="roast-line" id="roast">…</p>
+      </section>
+
+      <section class="actions">
+        <button class="btn btn-primary" id="openReport">Open full report</button>
+        <button class="btn btn-secondary" id="downloadCard">Generate share card</button>
+        <button class="btn btn-action" id="closeDupes" disabled>
+          <span id="closeDupesLabel">Close duplicate tabs</span>
+        </button>
+        <button class="btn btn-locked" id="upgrade" disabled title="Coming in TabShame Premium">
+          Upgrade · smart cleanup, history, themes
+        </button>
+      </section>
+
+      <footer class="ftr">
+        <span>All processing happens locally. We never see your tabs.</span>
+      </footer>
+    </main>
+
+    <script src="../lib/storage.js"></script>
+    <script src="../lib/domain-rules.js"></script>
+    <script src="../lib/archetype-engine.js"></script>
+    <script src="../lib/shame-engine.js"></script>
+    <script src="../lib/card-renderer.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
