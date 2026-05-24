@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>New Tab · TabShame</title>
+    <link rel="stylesheet" href="newtab.css" />
+  </head>
+  <!--
+    Default to mode-casual: most fresh installs and demoted-back-to-casual
+    users land here, and casual is the least-disruptive paint. newtab.js
+    promotes to mode-full / mode-lite only once it confirms the user has a
+    specific persona. This avoids a jarring "showcase → blank" flicker.
+  -->
+  <body class="mode-casual" aria-busy="true">
+    <!-- Full mode: persona showcase ────────────────────────────────────── -->
+    <main class="stage" data-mode-full>
+      <header class="topbar">
+        <span class="brand">TAB SHAME</span>
+        <span class="topbar-date" id="dateLabel"></span>
+      </header>
+
+      <section class="hero">
+        <div class="hero-eyebrow">Hi, you're</div>
+        <div class="hero-name">
+          <span class="hero-emoji" id="archetypeEmoji">🐌</span>
+          <span class="hero-archetype" id="archetypeName">Diagnosing…</span>
+        </div>
+        <div class="hero-stats">
+          <span class="hero-count" id="tabCount">--</span>
+          <span class="hero-stats-divider">·</span>
+          <span class="hero-score">shame score <span id="scoreValue">--</span></span>
+        </div>
+      </section>
+
+      <section class="roast-block">
+        <p class="roast-line" id="roastLine">…</p>
+      </section>
+
+      <section class="actions">
+        <button class="btn btn-primary" id="downloadCard">Share card</button>
+        <button class="btn btn-secondary" id="closeDupes" disabled>
+          <span id="closeDupesLabel">Close duplicates</span>
+        </button>
+        <button class="btn btn-tertiary" id="openReport">Open full report</button>
+      </section>
+
+      <!-- Shortcut opt-ins / grids sit BELOW the persona content so the user
+           sees their archetype first. Two independent permission pipelines,
+           side-by-side at wide widths; each renders either its CTA or
+           hydrated grid, never both. ────────────────────────────────── -->
+      <div class="shortcuts-stack">
+        <section class="shortcuts-section shortcuts-section-recent" data-shortcuts-section="recent">
+          <section class="shortcuts-cta" data-shortcuts-cta="recent" hidden>
+            <div class="shortcuts-cta-title">Show your Recent sites here?</div>
+            <div class="shortcuts-cta-actions">
+              <button class="btn btn-primary" data-shortcuts-add="recent">
+                Add Recent
+              </button>
+            </div>
+          </section>
+
+          <div class="shortcuts" data-shortcuts="recent" hidden>
+            <div class="shortcuts-label">Recent</div>
+            <div class="shortcuts-grid" data-shortcuts-grid="recent"></div>
+            <div class="shortcuts-more-row" data-shortcuts-more-row="recent" hidden>
+              <button class="mode-link" data-shortcuts-more="recent" type="button">
+                show more
+              </button>
+            </div>
+            <div class="shortcuts-remove-row">
+              <button class="mode-link" data-shortcuts-remove="recent" type="button">
+                remove
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="shortcuts-section shortcuts-section-bookmarks" data-shortcuts-section="bookmarks">
+          <section class="shortcuts-cta" data-shortcuts-cta="bookmarks" hidden>
+            <div class="shortcuts-cta-title">Show your Bookmark Bar here?</div>
+            <div class="shortcuts-cta-actions">
+              <button class="btn btn-primary" data-shortcuts-add="bookmarks">
+                Add Bookmarks
+              </button>
+            </div>
+          </section>
+
+          <div class="shortcuts" data-shortcuts="bookmarks" hidden>
+            <div class="shortcuts-label">Bookmark Bar</div>
+            <div class="shortcuts-grid" data-shortcuts-grid="bookmarks"></div>
+            <div class="shortcuts-more-row" data-shortcuts-more-row="bookmarks" hidden>
+              <button class="mode-link" data-shortcuts-more="bookmarks" type="button">
+                show more
+              </button>
+            </div>
+            <div class="shortcuts-remove-row">
+              <button class="mode-link" data-shortcuts-remove="bookmarks" type="button">
+                remove
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="stage-footer">
+        <button class="mode-link" id="switchToLite" type="button">
+          switch to lite mode
+        </button>
+        <span class="footer-meta">
+          all processing happens locally · we never see your tabs
+        </span>
+      </footer>
+    </main>
+
+    <!-- Casual mode: rendered when no specific persona has been earned.
+         The override is unavoidable in MV3 (chrome_url_overrides can't be
+         toggled at runtime), so we make the page near-blank instead — just
+         a whisper-faint brand tick and a quiet nudge. The address bar still
+         gets focus on new tab so the user can type and search as if nothing
+         had been overridden. ───────────────────────────────────────── -->
+    <section class="casual" data-mode-casual hidden>
+      <div class="casual-mark">TAB SHAME</div>
+      <div class="casual-nudge">No archetype yet — open ~5 themed tabs and you'll earn one.</div>
+
+      <!-- Shortcut opt-ins / grids sit below the brand+nudge so casual
+           mode still leads with the (intentionally near-blank) identity
+           tick. Same dual-template pattern as inside .stage. ────────── -->
+      <div class="shortcuts-stack shortcuts-stack-casual">
+        <section class="shortcuts-section shortcuts-section-recent shortcuts-section-casual"
+                 data-shortcuts-section="recent">
+          <section class="shortcuts-cta shortcuts-cta-casual" data-shortcuts-cta="recent" hidden>
+            <div class="shortcuts-cta-title">Show your Recent sites here?</div>
+            <div class="shortcuts-cta-actions">
+              <button class="btn btn-primary" data-shortcuts-add="recent">
+                Add Recent
+              </button>
+            </div>
+          </section>
+
+          <div class="shortcuts shortcuts-casual" data-shortcuts="recent" hidden>
+            <div class="shortcuts-label">Recent</div>
+            <div class="shortcuts-grid" data-shortcuts-grid="recent"></div>
+            <div class="shortcuts-more-row" data-shortcuts-more-row="recent" hidden>
+              <button class="mode-link" data-shortcuts-more="recent" type="button">
+                show more
+              </button>
+            </div>
+            <div class="shortcuts-remove-row">
+              <button class="mode-link" data-shortcuts-remove="recent" type="button">
+                remove
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="shortcuts-section shortcuts-section-bookmarks shortcuts-section-casual"
+                 data-shortcuts-section="bookmarks">
+          <section class="shortcuts-cta shortcuts-cta-casual" data-shortcuts-cta="bookmarks" hidden>
+            <div class="shortcuts-cta-title">Show your Bookmark Bar here?</div>
+            <div class="shortcuts-cta-actions">
+              <button class="btn btn-primary" data-shortcuts-add="bookmarks">
+                Add Bookmarks
+              </button>
+            </div>
+          </section>
+
+          <div class="shortcuts shortcuts-casual" data-shortcuts="bookmarks" hidden>
+            <div class="shortcuts-label">Bookmark Bar</div>
+            <div class="shortcuts-grid" data-shortcuts-grid="bookmarks"></div>
+            <div class="shortcuts-more-row" data-shortcuts-more-row="bookmarks" hidden>
+              <button class="mode-link" data-shortcuts-more="bookmarks" type="button">
+                show more
+              </button>
+            </div>
+            <div class="shortcuts-remove-row">
+              <button class="mode-link" data-shortcuts-remove="bookmarks" type="button">
+                remove
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- Lite mode: blank page with a corner chip ─────────────────────── -->
+    <aside class="chip" data-mode-lite hidden>
+      <button class="chip-button" id="chipButton" type="button" title="Open TabShame">
+        <span class="chip-emoji" id="chipEmoji">🐌</span>
+        <span class="chip-text">
+          <span class="chip-name" id="chipName">Diagnosing…</span>
+          <span class="chip-count"><span id="chipCount">--</span> tabs</span>
+        </span>
+      </button>
+      <button class="chip-mode" id="switchToFull" type="button" title="Switch to full new-tab page">
+        switch to full
+      </button>
+    </aside>
+
+    <script src="../lib/storage.js"></script>
+    <script src="../lib/domain-rules.js"></script>
+    <script src="../lib/archetype-engine.js"></script>
+    <script src="../lib/shame-engine.js"></script>
+    <script src="../lib/card-renderer.js"></script>
+    <script src="newtab.js"></script>
+  </body>
+</html>

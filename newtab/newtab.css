@@ -1,0 +1,588 @@
+/*
+ * newtab.css
+ *
+ * The override new-tab page. Two modes:
+ *   - .mode-full → persona showcase centered on the page
+ *   - .mode-lite → blank paper with a small chip in the top-right
+ *
+ * Mode is set by newtab.js on body load from settings.newTabMode.
+ * The non-active mode's container is hidden via [hidden] / display:none
+ * applied with attribute selectors so a flash of the wrong mode is avoided.
+ */
+
+:root {
+  --ink: #1a1612;
+  --ink-soft: rgba(26, 22, 18, 0.6);
+  --ink-faint: rgba(26, 22, 18, 0.35);
+  --paper: #f4ede0;
+  --peach: #ff8966;
+  --lavender: #b8a4ff;
+  --shame: #e63946;
+
+  --font-serif: "Fraunces", "Instrument Serif", Georgia, serif;
+  --font-italic: "Instrument Serif", "Fraunces", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(184, 164, 255, 0.18), transparent 60%),
+    radial-gradient(900px 500px at 0% 110%, rgba(255, 137, 102, 0.14), transparent 60%),
+    var(--paper);
+}
+
+/* Mode visibility — driven by body class. ─────────────────────────────── */
+body.mode-full [data-mode-lite],
+body.mode-full [data-mode-casual] { display: none !important; }
+
+body.mode-lite [data-mode-full],
+body.mode-lite [data-mode-casual] { display: none !important; }
+
+body.mode-casual [data-mode-full],
+body.mode-casual [data-mode-lite] { display: none !important; }
+
+/* mode-casual: strip the body gradient too so the page reads as a near-
+   default blank surface. The override is unavoidable; we just minimize
+   our footprint so it feels like Chrome's default new tab. */
+body.mode-casual {
+  background: var(--paper);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   FULL MODE — persona showcase
+   ══════════════════════════════════════════════════════════════════════ */
+.stage {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 20px 32px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top bar — brand mark + date */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+}
+
+.topbar-date { text-transform: uppercase; }
+
+/* Hero block — the persona showcase. Compact margin keeps the whole
+   page (topbar → hero → roast → actions → shortcuts → footer) inside
+   ~700px viewport without scrolling. */
+.hero {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hero-eyebrow {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--ink-soft);
+  line-height: 1;
+}
+
+.hero-name {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hero-emoji {
+  font-size: 60px;
+  line-height: 1;
+}
+
+.hero-archetype {
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 64px;
+  line-height: 0.92;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+
+.hero-stats {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 20px;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+
+.hero-count {
+  font-family: var(--font-serif);
+  font-style: normal;
+  font-weight: 900;
+  font-size: 28px;
+  color: var(--shame);
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-stats-divider { color: var(--ink-faint); }
+
+.hero-score { font-variant-numeric: tabular-nums; }
+
+/* Roast — the quoted line under the hero */
+.roast-block {
+  margin-top: 18px;
+  max-width: 620px;
+}
+
+.roast-line {
+  margin: 0;
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 19px;
+  line-height: 1.4;
+  color: var(--ink);
+  padding-left: 14px;
+  border-left: 3px solid var(--peach);
+}
+
+/* Action row */
+.actions {
+  margin-top: 18px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 12px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.06s ease, opacity 0.15s ease;
+}
+
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary { background: var(--ink); color: var(--paper); }
+.btn-secondary { background: var(--lavender); color: var(--ink); }
+.btn-tertiary {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid rgba(26, 22, 18, 0.2);
+}
+
+/* Footer */
+.stage-footer {
+  margin-top: auto;
+  padding-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+}
+
+.mode-link {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  text-transform: lowercase;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mode-link:hover { color: var(--ink); }
+
+.footer-meta {
+  text-transform: lowercase;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   LITE MODE — corner chip on an otherwise blank page
+   ══════════════════════════════════════════════════════════════════════ */
+.chip {
+  position: fixed;
+  top: 22px;
+  right: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.chip-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(26, 22, 18, 0.12);
+  border-radius: 999px;
+  padding: 10px 16px 10px 12px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(26, 22, 18, 0.06);
+  transition: transform 0.08s ease, box-shadow 0.15s ease;
+}
+
+.chip-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(26, 22, 18, 0.12);
+}
+
+.chip-emoji {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.chip-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  text-align: left;
+}
+
+.chip-name {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+.chip-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+}
+
+.chip-mode {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  text-transform: lowercase;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.chip-mode:hover { color: var(--ink-soft); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   CASUAL MODE — near-blank surface for users without a specific persona.
+   Now lives in normal flow (not fixed-position) so the shortcuts grid
+   inside it is clickable. When shortcuts are toggled off, the brand mark
+   + nudge naturally fall into the centered column.
+   ══════════════════════════════════════════════════════════════════════ */
+body.mode-casual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 48px 24px;
+  gap: 28px;
+}
+
+.casual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+  max-width: 720px;
+}
+
+.casual-mark {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: rgba(26, 22, 18, 0.18);
+}
+
+.casual-nudge {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 13px;
+  color: rgba(26, 22, 18, 0.28);
+  text-align: center;
+  max-width: 340px;
+  line-height: 1.4;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHORTCUTS — Recent (chrome.topSites) + Bookmark Bar tiles
+   Two independent opt-in sections, each with its own permission gate.
+     • .shortcuts-section-recent     → pinned to the TOP of every mode
+     • .shortcuts-section-bookmarks  → below the persona content
+   Each section renders either its CTA (data-shortcuts-cta) or the grid
+   (data-shortcuts) — never both. Lives in both .stage and .casual; the
+   same kind is hydrated into all matching containers in one pass.
+   ══════════════════════════════════════════════════════════════════════ */
+/* Both shortcut sections (Recent + Bookmark Bar) sit side-by-side at
+   wide widths so the two opt-in choices are visible together. They stack
+   vertically below ~720px so the grids don't crowd.
+   align-items: stretch (the flex default — kept implicit) is what
+   forces both sections to the height of the taller one. */
+.shortcuts-stack {
+  margin-top: 18px;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Each section is a flex column so its inner CTA (or grid) can grow to
+   fill the section's height — that's what aligns the "remove + revoke"
+   button (and the CTA's Add/No-thanks row) at the same Y across both
+   sections. The parent .shortcuts-stack is `align-items: stretch` by
+   default, so when one section has fewer items, the other one's content
+   stretches to match. */
+.shortcuts-section {
+  flex: 1 1 320px; /* allow shrink; below 320px the section wraps to its own row */
+  min-width: 0;    /* required so flex children with grids don't overflow */
+  display: flex;
+  flex-direction: column;
+}
+
+.shortcuts {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1; /* fill the section so the remove-row sits at the bottom */
+}
+
+.shortcuts[hidden] { display: none !important; }
+
+.shortcuts-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 10px;
+}
+
+/* Grid scales to its parent — auto-fit means tiles drop to whatever
+   number fits at a minimum tile width of ~72px. Lets the same grid look
+   right whether it's sharing a row with Bookmarks (~half width) or
+   stacked alone (full width). */
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 10px;
+}
+
+.shortcut-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px 10px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(26, 22, 18, 0.06);
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.15s ease, background 0.15s ease;
+  min-width: 0; /* allow text truncation */
+}
+
+.shortcut-tile:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 3px 10px rgba(26, 22, 18, 0.08);
+}
+
+.shortcut-favicon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(26, 22, 18, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-soft);
+  overflow: hidden;
+}
+
+.shortcut-favicon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.shortcut-title {
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--ink);
+  text-align: center;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Casual-mode shortcuts: softer presence to match the whisper-light vibe. */
+.shortcuts-casual .shortcuts-label { color: rgba(26, 22, 18, 0.35); }
+.shortcuts-casual .shortcut-tile { background: rgba(255, 255, 255, 0.4); }
+
+/* Opt-in CTAs — styled to echo the share-card aesthetic (paper +
+   peach/lavender gradient, serif title). Compact padding so the whole
+   page fits without scrolling. */
+.shortcuts-cta {
+  padding: 16px 18px 14px;
+  background:
+    linear-gradient(135deg, rgba(255, 137, 102, 0.12), rgba(184, 164, 255, 0.18)),
+    rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(26, 22, 18, 0.08);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1; /* fill section height — pairs with align-items: stretch on parent */
+  box-shadow: 0 2px 10px rgba(26, 22, 18, 0.05);
+}
+
+.shortcuts-cta[hidden] { display: none !important; }
+
+.shortcuts-cta-title {
+  font-family: var(--font-serif);
+  font-weight: 800;
+  font-size: 17px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.shortcuts-cta-body {
+  margin: 0;
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.shortcuts-cta-body strong {
+  font-style: normal;
+  font-family: var(--font-sans);
+  font-weight: 600;
+}
+
+.shortcuts-cta-body em {
+  /* The "never" emphasis — break italic to bold-non-italic for contrast
+     against the surrounding italic body. */
+  font-style: normal;
+  font-weight: 700;
+}
+
+.shortcuts-cta-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto; /* aligns CTA buttons with neighbor's remove link */
+  padding-top: 8px;
+}
+
+/* Casual-mode CTA: softer chrome to match the near-blank surface. */
+.shortcuts-cta-casual {
+  background: rgba(255, 255, 255, 0.45);
+  border-color: rgba(26, 22, 18, 0.05);
+}
+
+/* "show more" link below the grid, shown only when collapsed and more
+   items exist than the collapsed cap (5). */
+.shortcuts-more-row {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+}
+.shortcuts-more-row[hidden] { display: none !important; }
+
+/* "remove shortcuts + revoke" link at the foot of the populated grids.
+   margin-top: auto pushes it to the bottom of the flex column, which is
+   what aligns the Y position across both sections. */
+.shortcuts-remove-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+/* Loading state — soft pulse for placeholder elements while hydrating. */
+body[aria-busy="true"] .hero-archetype,
+body[aria-busy="true"] .hero-emoji,
+body[aria-busy="true"] .hero-count,
+body[aria-busy="true"] .roast-line,
+body[aria-busy="true"] .chip-name {
+  opacity: 0.5;
+}
+
+/* Small screens — stay readable on narrow Chrome side-window widths.
+   Shortcut grids handle their own responsiveness via auto-fit (above). */
+@media (max-width: 640px) {
+  .stage { padding: 22px 20px; }
+  .hero { margin-top: 4vh; }
+  .hero-emoji { font-size: 52px; }
+  .hero-archetype { font-size: 52px; }
+  .hero-eyebrow { font-size: 18px; }
+  .roast-line { font-size: 18px; }
+  .stage-footer { flex-direction: column; align-items: flex-start; }
+}
