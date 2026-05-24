@@ -20,42 +20,47 @@
         <span class="topbar-date" id="dateLabel"></span>
       </header>
 
-      <section class="hero">
-        <div class="hero-eyebrow">Hi, you're</div>
-        <div class="hero-name">
-          <span class="hero-emoji" id="archetypeEmoji">🐌</span>
-          <span class="hero-archetype" id="archetypeName">Diagnosing…</span>
-        </div>
-        <div class="hero-stats">
-          <span class="hero-count" id="tabCount">--</span>
-          <span class="hero-stats-divider">·</span>
-          <span class="hero-score">shame score <span id="scoreValue">--</span></span>
-        </div>
-      </section>
+      <!-- Persona column. In full mode it sits in the normal column
+           flow (acts like a poster); in lite mode the .stage becomes a
+           two-column grid and this column is a compact card on the left. -->
+      <div class="persona-column">
+        <section class="hero">
+          <div class="hero-eyebrow">Hi, you're</div>
+          <div class="hero-name">
+            <span class="hero-emoji" id="archetypeEmoji">🐌</span>
+            <span class="hero-archetype" id="archetypeName">Diagnosing…</span>
+          </div>
+          <div class="hero-stats">
+            <span class="hero-count" id="tabCount">--</span>
+            <span class="hero-stats-divider">·</span>
+            <span class="hero-score">shame score <span id="scoreValue">--</span></span>
+          </div>
+        </section>
 
-      <section class="roast-block">
-        <p class="roast-line" id="roastLine">…</p>
-      </section>
+        <section class="roast-block">
+          <p class="roast-line" id="roastLine">…</p>
+        </section>
 
-      <section class="actions">
-        <button class="btn btn-primary" id="downloadCard">Share card</button>
-        <button class="btn btn-secondary" id="closeDupes" disabled>
-          <span id="closeDupesLabel">Close duplicates</span>
-        </button>
-        <button class="btn btn-tertiary" id="openReport">Open full report</button>
-      </section>
+        <section class="actions">
+          <button class="btn btn-primary" id="downloadCard">Share card</button>
+          <button class="btn btn-secondary" id="closeDupes" disabled>
+            <span id="closeDupesLabel">Close duplicates</span>
+          </button>
+          <button class="btn btn-tertiary" id="openReport">Open full report</button>
+        </section>
+      </div>
 
-      <!-- Shortcut opt-ins / grids sit BELOW the persona content so the user
-           sees their archetype first. Two independent permission pipelines,
-           side-by-side at wide widths; each renders either its CTA or
-           hydrated grid, never both. ────────────────────────────────── -->
-      <div class="shortcuts-stack">
+      <!-- Shortcuts column. In full mode it sits below the persona; in
+           lite mode it's the main right-hand column. Two independent
+           permission pipelines, side-by-side at wide widths. ────────── -->
+      <div class="shortcuts-column">
+        <div class="shortcuts-stack">
         <section class="shortcuts-section shortcuts-section-recent" data-shortcuts-section="recent">
           <section class="shortcuts-cta" data-shortcuts-cta="recent" hidden>
             <div class="shortcuts-cta-title">Show your Recent sites here?</div>
             <div class="shortcuts-cta-actions">
               <button class="btn btn-primary" data-shortcuts-add="recent">
-                Add Recent
+                Show Recent
               </button>
             </div>
           </section>
@@ -81,7 +86,7 @@
             <div class="shortcuts-cta-title">Show your Bookmark Bar here?</div>
             <div class="shortcuts-cta-actions">
               <button class="btn btn-primary" data-shortcuts-add="bookmarks">
-                Add Bookmarks
+                Show Bookmarks
               </button>
             </div>
           </section>
@@ -101,7 +106,8 @@
             </div>
           </div>
         </section>
-      </div>
+        </div>
+      </div><!-- /.shortcuts-column -->
 
       <footer class="stage-footer">
         <button class="mode-link" id="switchToLite" type="button">
@@ -133,7 +139,7 @@
             <div class="shortcuts-cta-title">Show your Recent sites here?</div>
             <div class="shortcuts-cta-actions">
               <button class="btn btn-primary" data-shortcuts-add="recent">
-                Add Recent
+                Show Recent
               </button>
             </div>
           </section>
@@ -160,7 +166,7 @@
             <div class="shortcuts-cta-title">Show your Bookmark Bar here?</div>
             <div class="shortcuts-cta-actions">
               <button class="btn btn-primary" data-shortcuts-add="bookmarks">
-                Add Bookmarks
+                Show Bookmarks
               </button>
             </div>
           </section>
@@ -183,19 +189,10 @@
       </div>
     </section>
 
-    <!-- Lite mode: blank page with a corner chip ─────────────────────── -->
-    <aside class="chip" data-mode-lite hidden>
-      <button class="chip-button" id="chipButton" type="button" title="Open TabShame">
-        <span class="chip-emoji" id="chipEmoji">🐌</span>
-        <span class="chip-text">
-          <span class="chip-name" id="chipName">Diagnosing…</span>
-          <span class="chip-count"><span id="chipCount">--</span> tabs</span>
-        </span>
-      </button>
-      <button class="chip-mode" id="switchToFull" type="button" title="Switch to full new-tab page">
-        switch to full
-      </button>
-    </aside>
+    <!-- Lite mode: shortcuts-first. Reuses the .stage structure but
+         hides the persona content (hero / roast / actions) via mode-lite
+         CSS rules, leaving topbar + Recent + Bookmark + footer. The
+         toolbar popup is the path to the persona card when in lite. ─── -->
 
     <script src="../lib/storage.js"></script>
     <script src="../lib/domain-rules.js"></script>

@@ -3,7 +3,7 @@
  *
  * The override new-tab page. Two modes:
  *   - .mode-full → persona showcase centered on the page
- *   - .mode-lite → blank paper with a small chip in the top-right
+ *   - .mode-lite → shortcuts-only (Recent + Bookmark), no persona content
  *
  * Mode is set by newtab.js on body load from settings.newTabMode.
  * The non-active mode's container is hidden via [hidden] / display:none
@@ -45,14 +45,129 @@ body {
 }
 
 /* Mode visibility — driven by body class. ─────────────────────────────── */
-body.mode-full [data-mode-lite],
 body.mode-full [data-mode-casual] { display: none !important; }
 
-body.mode-lite [data-mode-full],
 body.mode-lite [data-mode-casual] { display: none !important; }
 
-body.mode-casual [data-mode-full],
-body.mode-casual [data-mode-lite] { display: none !important; }
+body.mode-casual [data-mode-full] { display: none !important; }
+
+/* Lite mode = same single-column stack as full mode, just with the
+   shortcut grids placed ABOVE the persona card. Both elements remain
+   full-width (no two-column split — single alignment axis).
+   The reorder is done via flex `order`; HTML stays in full-mode order
+   so the markup reads naturally. */
+body.mode-lite .topbar           { order: 0; }
+body.mode-lite .shortcuts-column { order: 1; }
+body.mode-lite .persona-column   { order: 2; }
+body.mode-lite .stage-footer     { order: 3; }
+
+/* Persona-column becomes a full-width card in lite — but a LIGHT one.
+   Lite mode shifts the persona from "poster" to "ambient reminder":
+   smaller fonts, near-paper background, no shadow. The shortcut grids
+   above are the active surface; the persona sits quietly below. */
+body.mode-lite .persona-column {
+  margin-top: 18px;
+  padding: 18px 24px 16px;
+  background:
+    linear-gradient(135deg, rgba(255, 137, 102, 0.05), rgba(184, 164, 255, 0.07)),
+    rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(26, 22, 18, 0.05);
+  border-radius: 12px;
+}
+
+/* Compact persona elements in lite — quieter than full but still readable
+   at a glance. Sizes between full (60/64) and the earlier over-shrink
+   (36/28) — landed at 44/36 so the archetype name still feels like
+   a headline, just secondary. */
+body.mode-lite .persona-column .hero { margin-top: 0; gap: 6px; }
+body.mode-lite .hero-emoji { font-size: 44px; }
+body.mode-lite .hero-archetype { font-size: 36px; line-height: 0.95; }
+body.mode-lite .hero-eyebrow { font-size: 14px; }
+body.mode-lite .hero-stats { font-size: 12px; gap: 6px; }
+body.mode-lite .hero-count { font-size: 16px; }
+body.mode-lite .roast-block { margin-top: 10px; }
+body.mode-lite .roast-line {
+  font-size: 13px;
+  line-height: 1.4;
+  padding-left: 10px;
+}
+
+/* Lite-mode persona has ONE escape hatch (Open full report), not three
+   action buttons. Hide Share card + Close duplicates here; those CTAs
+   belong on the full-mode poster where persona is the focus, not on
+   the secondary card where they'd compete with the primary Add CTAs. */
+body.mode-lite #downloadCard,
+body.mode-lite #closeDupes {
+  display: none;
+}
+
+/* Open full report demotes to a small text link in lite — matches the
+   "remove" / "show more" mode-link aesthetic used elsewhere on the page. */
+body.mode-lite .actions { margin-top: 12px; }
+body.mode-lite #openReport {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  align-self: flex-start;
+  cursor: pointer;
+}
+body.mode-lite #openReport:hover { color: var(--ink); }
+
+/* ── Lite-mode CTAs are PRIMARY content ─────────────────────────────
+   Lite is shortcut-focused, so the Add CTAs become the visible focal
+   element. Restore the card background, bold serif title, and the
+   solid primary Add button that the (full-mode default) state above
+   intentionally suppressed. Persona is now the quieter element. */
+body.mode-lite .shortcuts-cta {
+  padding: 16px 18px 14px;
+  background:
+    linear-gradient(135deg, rgba(255, 137, 102, 0.14), rgba(184, 164, 255, 0.2)),
+    rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(26, 22, 18, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(26, 22, 18, 0.05);
+}
+
+body.mode-lite .shortcuts-cta-title {
+  font-family: var(--font-serif);
+  font-style: normal;
+  font-weight: 800;
+  font-size: 17px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+/* Solid primary Add button in lite — overrides the .shortcuts-cta
+   .btn-primary outlined chip applied for full mode. */
+body.mode-lite .shortcuts-cta .btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  align-self: flex-start;
+}
+body.mode-lite .shortcuts-cta .btn-primary:hover {
+  background: var(--ink);
+  border: none;
+}
+
+/* Shortcuts-stack sits directly under the topbar in lite. Give it
+   generous top breathing room so it reads as a separate group from
+   the brand mark — closer than the default would feel like they're
+   in the same visual unit. */
+body.mode-lite .shortcuts-column .shortcuts-stack { margin-top: 36px; }
 
 /* mode-casual: strip the body gradient too so the page reads as a near-
    default blank surface. The override is unavoidable; we just minimize
@@ -69,7 +184,7 @@ body.mode-casual {
   width: 100%;
   max-width: 880px;
   margin: 0 auto;
-  padding: 20px 32px 24px;
+  padding: 32px 32px 32px;
   display: flex;
   flex-direction: column;
 }
@@ -88,14 +203,14 @@ body.mode-casual {
 
 .topbar-date { text-transform: uppercase; }
 
-/* Hero block — the persona showcase. Compact margin keeps the whole
-   page (topbar → hero → roast → actions → shortcuts → footer) inside
-   ~700px viewport without scrolling. */
+/* Hero block — the persona showcase. Generous margin-top from the
+   topbar so the persona reads as a separate visual group. Internal gap
+   widens the eyebrow → name → stats rhythm. */
 .hero {
-  margin-top: 14px;
+  margin-top: 40px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
 
 .hero-eyebrow {
@@ -153,7 +268,7 @@ body.mode-casual {
 
 /* Roast — the quoted line under the hero */
 .roast-block {
-  margin-top: 18px;
+  margin-top: 36px;
   max-width: 620px;
 }
 
@@ -170,7 +285,7 @@ body.mode-casual {
 
 /* Action row */
 .actions {
-  margin-top: 18px;
+  margin-top: 32px;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
@@ -203,7 +318,7 @@ body.mode-casual {
 /* Footer */
 .stage-footer {
   margin-top: auto;
-  padding-top: 18px;
+  padding-top: 36px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -234,88 +349,6 @@ body.mode-casual {
 .footer-meta {
   text-transform: lowercase;
 }
-
-/* ════════════════════════════════════════════════════════════════════════
-   LITE MODE — corner chip on an otherwise blank page
-   ══════════════════════════════════════════════════════════════════════ */
-.chip {
-  position: fixed;
-  top: 22px;
-  right: 22px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-}
-
-.chip-button {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(26, 22, 18, 0.12);
-  border-radius: 999px;
-  padding: 10px 16px 10px 12px;
-  cursor: pointer;
-  font: inherit;
-  color: var(--ink);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 2px 8px rgba(26, 22, 18, 0.06);
-  transition: transform 0.08s ease, box-shadow 0.15s ease;
-}
-
-.chip-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(26, 22, 18, 0.12);
-}
-
-.chip-emoji {
-  font-size: 26px;
-  line-height: 1;
-}
-
-.chip-text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-  text-align: left;
-}
-
-.chip-name {
-  font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: 14px;
-  line-height: 1.05;
-  letter-spacing: -0.01em;
-}
-
-.chip-count {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--ink-soft);
-  text-transform: uppercase;
-}
-
-.chip-mode {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--ink-faint);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 2px 6px;
-  text-transform: lowercase;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.chip-mode:hover { color: var(--ink-soft); }
 
 /* ════════════════════════════════════════════════════════════════════════
    CASUAL MODE — near-blank surface for users without a specific persona.
@@ -373,9 +406,11 @@ body.mode-casual {
    wide widths so the two opt-in choices are visible together. They stack
    vertically below ~720px so the grids don't crowd.
    align-items: stretch (the flex default — kept implicit) is what
-   forces both sections to the height of the taller one. */
+   forces both sections to the height of the taller one.
+   Large margin-top creates a clear group boundary between the persona
+   poster above and the shortcut affordances below. */
 .shortcuts-stack {
-  margin-top: 18px;
+  margin-top: 44px;
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
@@ -417,11 +452,14 @@ body.mode-casual {
 /* Grid scales to its parent — auto-fit means tiles drop to whatever
    number fits at a minimum tile width of ~72px. Lets the same grid look
    right whether it's sharing a row with Bookmarks (~half width) or
-   stacked alone (full width). */
+   stacked alone (full width).
+   Row-gap > column-gap so multi-row grids (after "show more") have
+   visible vertical rhythm — tiles in adjacent rows don't crowd. */
 .shortcuts-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
-  gap: 10px;
+  column-gap: 10px;
+  row-gap: 18px;
 }
 
 .shortcut-tile {
@@ -483,31 +521,29 @@ body.mode-casual {
 .shortcuts-casual .shortcuts-label { color: rgba(26, 22, 18, 0.35); }
 .shortcuts-casual .shortcut-tile { background: rgba(255, 255, 255, 0.4); }
 
-/* Opt-in CTAs — styled to echo the share-card aesthetic (paper +
-   peach/lavender gradient, serif title). Compact padding so the whole
-   page fits without scrolling. */
+/* Opt-in CTAs (full mode default) — subordinate to the persona poster
+   above but still discoverable. Light wash background + readable serif
+   title + outlined chip button. The lite-mode override below promotes
+   them to primary content (gradient bg, solid Add button). */
 .shortcuts-cta {
-  padding: 16px 18px 14px;
-  background:
-    linear-gradient(135deg, rgba(255, 137, 102, 0.12), rgba(184, 164, 255, 0.18)),
-    rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(26, 22, 18, 0.08);
-  border-radius: 14px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(26, 22, 18, 0.06);
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   flex: 1; /* fill section height — pairs with align-items: stretch on parent */
-  box-shadow: 0 2px 10px rgba(26, 22, 18, 0.05);
 }
 
 .shortcuts-cta[hidden] { display: none !important; }
 
 .shortcuts-cta-title {
   font-family: var(--font-serif);
-  font-weight: 800;
-  font-size: 17px;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.2;
   color: var(--ink);
 }
 
@@ -541,6 +577,24 @@ body.mode-casual {
   padding-top: 8px;
 }
 
+/* Full-mode Add button — outlined chip in the .btn-tertiary line style.
+   Quietly subordinate to the persona poster but clearly clickable. The
+   lite-mode override below replaces this with a solid ink primary. */
+.shortcuts-cta .btn-primary {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid rgba(26, 22, 18, 0.25);
+  padding: 8px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  align-self: flex-start;
+}
+
+.shortcuts-cta .btn-primary:hover {
+  border-color: rgba(26, 22, 18, 0.5);
+}
+
 /* Casual-mode CTA: softer chrome to match the near-blank surface. */
 .shortcuts-cta-casual {
   background: rgba(255, 255, 255, 0.45);
@@ -570,8 +624,7 @@ body.mode-casual {
 body[aria-busy="true"] .hero-archetype,
 body[aria-busy="true"] .hero-emoji,
 body[aria-busy="true"] .hero-count,
-body[aria-busy="true"] .roast-line,
-body[aria-busy="true"] .chip-name {
+body[aria-busy="true"] .roast-line {
   opacity: 0.5;
 }
 

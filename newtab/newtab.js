@@ -3,7 +3,8 @@
  *
  * Drives the override new-tab page. Reads the user's mode preference,
  * sets the body class accordingly, then asks the service worker for a
- * fresh diagnosis and hydrates either the full showcase or the corner chip.
+ * fresh diagnosis and hydrates the showcase (mode-full) or the
+ * shortcuts-only layout (mode-lite). Casual users see a near-blank page.
  *
  * Performance: the page renders the skeleton instantly from the cached
  * settings + last-known archetype in storage (no message round-trip needed
@@ -27,13 +28,9 @@
     closeDupes: document.getElementById("closeDupes"),
     closeDupesLabel: document.getElementById("closeDupesLabel"),
     openReport: document.getElementById("openReport"),
-    switchToLite: document.getElementById("switchToLite"),
-    // Lite mode
-    chipEmoji: document.getElementById("chipEmoji"),
-    chipName: document.getElementById("chipName"),
-    chipCount: document.getElementById("chipCount"),
-    chipButton: document.getElementById("chipButton"),
-    switchToFull: document.getElementById("switchToFull")
+    // Footer toggle — flips between full and lite mode. Label rewritten
+    // by updateModeToggleLabel() to reflect current state.
+    switchToLite: document.getElementById("switchToLite")
   };
 
   let currentReport = null;
@@ -114,6 +111,8 @@
     if (mode === "lite") els.body.classList.add("mode-lite");
     else if (mode === "casual") els.body.classList.add("mode-casual");
     else els.body.classList.add("mode-full");
+    // Keep the footer toggle label in sync.
+    updateModeToggleLabel();
   }
 
   // Paint skeleton from cached storage — uses the last-known archetype and
@@ -140,9 +139,6 @@
     els.archetypeEmoji.textContent = archetype.emoji;
     els.archetypeName.textContent = archetype.name;
     els.tabCount.textContent = String(cachedTabCount);
-    els.chipEmoji.textContent = archetype.emoji;
-    els.chipName.textContent = archetype.name;
-    els.chipCount.textContent = String(cachedTabCount);
   }
 
   function render(report) {
@@ -154,10 +150,6 @@
     els.tabCount.textContent = String(report.stats.tabCount);
     els.scoreValue.textContent = String(report.score);
     els.roastLine.textContent = `"${report.roast}"`;
-
-    els.chipEmoji.textContent = archetype.emoji;
-    els.chipName.textContent = archetype.name;
-    els.chipCount.textContent = String(report.stats.tabCount);
 
     updateActionStates();
   }
@@ -222,28 +214,27 @@
       }
     });
 
-    // Mode swaps — persist and re-apply without reload (instant feedback).
-    // Only meaningful when a specific persona is active; the inline links
-    // aren't rendered in mode-casual so we don't guard further here.
+    // Footer link toggles between full and lite. Label is rewritten by
+    // updateModeToggleLabel() to reflect the current state. Only rendered
+    // in non-casual modes (.casual hides the .stage footer entirely).
     els.switchToLite.addEventListener("click", async () => {
-      storedNewTabMode = "lite";
-      await T.storage.updateSettings({ newTabMode: "lite" });
-      setBodyMode("lite");
+      const next = els.body.classList.contains("mode-lite") ? "full" : "lite";
+      storedNewTabMode = next;
+      await T.storage.updateSettings({ newTabMode: next });
+      setBodyMode(next);
+      updateModeToggleLabel();
     });
+    updateModeToggleLabel();
+  }
 
-    els.switchToFull.addEventListener("click", async () => {
-      storedNewTabMode = "full";
-      await T.storage.updateSettings({ newTabMode: "full" });
-      setBodyMode("full");
-    });
-
-    // Tapping the chip body opens the full report (so lite mode still has a
-    // way to get to the persona card).
-    els.chipButton.addEventListener("click", (e) => {
-      // Don't conflict with the "switch to full" link inside the chip area.
-      if (e.target === els.switchToFull) return;
-      chrome.tabs.create({ url: chrome.runtime.getURL("report/report.html") });
-    });
+  function updateModeToggleLabel() {
+    if (!els.switchToLite) return;
+    const isLite = els.body.classList.contains("mode-lite");
+    // Verb-led labels — tells the user what clicking does, not just
+    // a mode name they have to translate.
+    els.switchToLite.textContent = isLite
+      ? "show persona first"
+      : "show shortcuts first";
   }
 
   // ─── shortcuts (Recent + Bookmark Bar) ───────────────────────────────

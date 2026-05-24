@@ -358,12 +358,17 @@ chrome.storage.local.set({ isPremium: false, featureFlags: {} });
 - [ ] **Close duplicates works** — if you have duplicate tabs, the
       button is enabled; clicking it closes them and refreshes the
       counts inline.
-- [ ] **Switch to lite (inline)** — click "switch to lite mode" in the
-      footer. The page swaps to lite immediately (no reload). The new
-      view is mostly blank paper with a small chip in the top-right
-      showing the persona emoji + name + tab count.
-- [ ] **Lite chip is interactive** — click the chip body to open the
-      full report. Click "switch to full" under it to swap back.
+- [ ] **Switch to lite (inline)** — click "switch to lite mode" in
+      the footer. The page swaps (no reload). Both modes use the same
+      single-column stack; lite simply places the Recent + Bookmark
+      grids ABOVE the persona, which becomes a full-width card below.
+      Single alignment axis — every element shares the same horizontal
+      bounds.
+- [ ] **Toggle label updates** — in lite mode the footer link reads
+      "switch to full mode". Clicking it returns to persona-on-top.
+- [ ] **Lite = add-on, not replacement** — the persona is still
+      visible (full-width card below the shortcuts), all action
+      buttons still present. Shortcuts are simply elevated to the top.
 - [ ] **Mode persists across tabs** — pick lite, open another new tab.
       It also renders in lite mode.
 - [ ] **Popup mirrors the setting** — open the popup. The
@@ -464,7 +469,7 @@ either kind, revoked when both kinds are removed.
       Full / Casual. In Full, the Recent and Bookmark Bar sections sit
       side-by-side below the action row, so the persona is the first
       thing visible. In Casual, they sit below the brand-tick + nudge.
-      Lite mode shows neither (chip only).
+      Lite mode shows the same two sections (centered) but without the persona showcase.
 - [ ] **Responsive grid** — narrow the window to ~720px (sections
       stack vertically) and ~400px (tiles per row drop via
       `grid-template-columns: repeat(auto-fit, minmax(72px, 1fr))`).
