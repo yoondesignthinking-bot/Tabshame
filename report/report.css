@@ -281,6 +281,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 24px;
+  align-items: stretch; /* equalize card heights */
 }
 
 .preview {
@@ -289,24 +290,55 @@ body {
   background: rgba(255, 255, 255, 0.55);
   padding: 16px;
   border-radius: 16px;
+  /* Vertical flex so the canvas, caption, and button can be aligned
+     consistently. The canvas occupies a fixed-height bay; the caption +
+     button get pushed to the bottom via margin-top: auto on the caption
+     so the Download buttons share the same Y across all three cards. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
+/* Fixed-height bay for the share-card preview canvas. Each format has a
+   different aspect ratio (16:9, 4:5, 9:16) so the canvas sizes itself
+   inside this constant-height container — width adjusts, height is
+   pinned, and `object-fit: contain` keeps the whole preview visible. */
 .preview canvas {
-  max-width: 100%;
-  height: auto;
+  width: 100%;
+  height: 320px;
+  max-height: 320px;
+  object-fit: contain;
   border-radius: 8px;
   display: block;
-  margin: 0 auto;
   box-shadow: 0 8px 24px rgba(26, 22, 18, 0.08);
 }
 
 .preview figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: auto; /* pushes caption + button to the bottom of the card */
+  padding-top: 28px;    /* breathing room between the canvas and caption */
+  padding-bottom: 14px; /* space before the Download button */
+}
+
+/* Two-line caption: primary destination label + secondary spec line.
+   The primary line should read like a noun phrase ("Instagram feed post"),
+   secondary explains the format so users know which card fits where. */
+.preview-caption-name {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.preview-caption-meta {
   font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   color: var(--ink-soft);
-  margin: 14px 0 12px;
 }
 
 /* Buttons ──────────────────────────────────────────────── */

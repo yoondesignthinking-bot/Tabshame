@@ -7,12 +7,12 @@
     <link rel="stylesheet" href="newtab.css" />
   </head>
   <!--
-    Default to mode-casual: most fresh installs and demoted-back-to-casual
-    users land here, and casual is the least-disruptive paint. newtab.js
-    promotes to mode-full / mode-lite only once it confirms the user has a
-    specific persona. This avoids a jarring "showcase → blank" flicker.
+    Default to mode-full. The casual_hoarder persona renders in the same
+    layout as any specific archetype now; there's no separate "casual"
+    mode that strips the page. newtab.js promotes to mode-lite if the
+    user has explicitly preferred shortcuts-first.
   -->
-  <body class="mode-casual" aria-busy="true">
+  <body class="mode-full" aria-busy="true">
     <!-- Full mode: persona showcase ────────────────────────────────────── -->
     <main class="stage" data-mode-full>
       <header class="topbar">
@@ -118,76 +118,6 @@
         </span>
       </footer>
     </main>
-
-    <!-- Casual mode: rendered when no specific persona has been earned.
-         The override is unavoidable in MV3 (chrome_url_overrides can't be
-         toggled at runtime), so we make the page near-blank instead — just
-         a whisper-faint brand tick and a quiet nudge. The address bar still
-         gets focus on new tab so the user can type and search as if nothing
-         had been overridden. ───────────────────────────────────────── -->
-    <section class="casual" data-mode-casual hidden>
-      <div class="casual-mark">TAB SHAME</div>
-      <div class="casual-nudge">No archetype yet — open ~5 themed tabs and you'll earn one.</div>
-
-      <!-- Shortcut opt-ins / grids sit below the brand+nudge so casual
-           mode still leads with the (intentionally near-blank) identity
-           tick. Same dual-template pattern as inside .stage. ────────── -->
-      <div class="shortcuts-stack shortcuts-stack-casual">
-        <section class="shortcuts-section shortcuts-section-recent shortcuts-section-casual"
-                 data-shortcuts-section="recent">
-          <section class="shortcuts-cta shortcuts-cta-casual" data-shortcuts-cta="recent" hidden>
-            <div class="shortcuts-cta-title">Show your Recent sites here?</div>
-            <div class="shortcuts-cta-actions">
-              <button class="btn btn-primary" data-shortcuts-add="recent">
-                Show Recent
-              </button>
-            </div>
-          </section>
-
-          <div class="shortcuts shortcuts-casual" data-shortcuts="recent" hidden>
-            <div class="shortcuts-label">Recent</div>
-            <div class="shortcuts-grid" data-shortcuts-grid="recent"></div>
-            <div class="shortcuts-more-row" data-shortcuts-more-row="recent" hidden>
-              <button class="mode-link" data-shortcuts-more="recent" type="button">
-                show more
-              </button>
-            </div>
-            <div class="shortcuts-remove-row">
-              <button class="mode-link" data-shortcuts-remove="recent" type="button">
-                remove
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section class="shortcuts-section shortcuts-section-bookmarks shortcuts-section-casual"
-                 data-shortcuts-section="bookmarks">
-          <section class="shortcuts-cta shortcuts-cta-casual" data-shortcuts-cta="bookmarks" hidden>
-            <div class="shortcuts-cta-title">Show your Bookmark Bar here?</div>
-            <div class="shortcuts-cta-actions">
-              <button class="btn btn-primary" data-shortcuts-add="bookmarks">
-                Show Bookmarks
-              </button>
-            </div>
-          </section>
-
-          <div class="shortcuts shortcuts-casual" data-shortcuts="bookmarks" hidden>
-            <div class="shortcuts-label">Bookmark Bar</div>
-            <div class="shortcuts-grid" data-shortcuts-grid="bookmarks"></div>
-            <div class="shortcuts-more-row" data-shortcuts-more-row="bookmarks" hidden>
-              <button class="mode-link" data-shortcuts-more="bookmarks" type="button">
-                show more
-              </button>
-            </div>
-            <div class="shortcuts-remove-row">
-              <button class="mode-link" data-shortcuts-remove="bookmarks" type="button">
-                remove
-              </button>
-            </div>
-          </div>
-        </section>
-      </div>
-    </section>
 
     <!-- Lite mode: shortcuts-first. Reuses the .stage structure but
          hides the persona content (hero / roast / actions) via mode-lite

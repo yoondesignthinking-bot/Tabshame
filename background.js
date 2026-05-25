@@ -65,22 +65,49 @@ chrome.runtime.onStartup.addListener(async () => {
 });
 
 
+// Apply the same skip rules used by the live tab-event listeners. Without
+// this, the new-tab override page, the report page, chrome://newtab, etc.
+// would get tracked as tabs — and their chrome-extension://EXT_ID/...
+// hostname (32 lowercase chars) ends up dominating the Top Haunt tile.
+function isTrackableUrl(url) {
+  if (!url) return false;
+  if (
+    url.startsWith("chrome://") ||
+    url.startsWith("chrome-extension://") ||
+    url.startsWith("edge://") ||
+    url.startsWith("about:")
+  ) return false;
+  return true;
+}
+
+function isTrackableTab(tab) {
+  if (!tab) return false;
+  return isTrackableUrl(tab.url || tab.pendingUrl || "");
+}
+
 async function importExistingTabs() {
-  const tabs = await queryAllTabs();
+  const tabs = (await queryAllTabs()).filter(isTrackableTab);
   const now = Date.now();
   const records = tabs.map((t) => normalizeTab(t, now, "imported"));
   await T.storage.upsertManyTabs(records);
 }
 
 async function reconcileWithOpenTabs() {
-  const tabs = await queryAllTabs();
-  const ids = tabs.map((t) => t.id);
-  await T.storage.pruneToOpenTabIds(ids);
+  const allOpen = await queryAllTabs();
 
-  // Add any tabs that aren't in storage yet.
+  // Open AND trackable. Skipping anything chrome:// / chrome-extension://.
+  const trackable = allOpen.filter(isTrackableTab);
+  const trackableIds = trackable.map((t) => t.id);
+
+  // Prune storage to only trackable open tabs — this also evicts any junk
+  // records already in storage from older builds that didn't filter
+  // properly (e.g. our own new-tab page leaking in as a tab).
+  await T.storage.pruneToOpenTabIds(trackableIds);
+
+  // Add any newly-seen trackable tabs that aren't in storage yet.
   const stored = await T.storage.getAllTabs();
   const now = Date.now();
-  const missing = tabs.filter((t) => !stored[String(t.id)]);
+  const missing = trackable.filter((t) => !stored[String(t.id)]);
   if (missing.length) {
     const records = missing.map((t) => normalizeTab(t, now, "live"));
     await T.storage.upsertManyTabs(records);
@@ -441,6 +468,62 @@ function tabsGroup(options) {
   });
 }
 
+function tabsUngroup(tabIds) {
+  return new Promise((resolve, reject) => {
+    try {
+      chrome.tabs.ungroup(tabIds, () => {
+        if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+        else resolve();
+      });
+    } catch (e) { reject(e); }
+  });
+}
+
+function tabsQueryByGroupId(groupId) {
+  return new Promise((resolve) => {
+    try {
+      chrome.tabs.query({ groupId: Number(groupId) }, (t) => resolve(t || []));
+    } catch (_e) { resolve([]); }
+  });
+}
+
+// Releases tracked persona groups that no longer reflect the current
+// diagnosis. Two release conditions:
+//   1. The group's archetypeId is NOT the current one (user changed
+//      persona — old group is stale).
+//   2. The group has fewer than 2 tabs left (a 1-tab group is just a
+//      pill in the tab strip with no grouping value).
+// "Release" = ungroup the member tabs (which removes the Chrome group
+// when empty) AND clear the entry from storage so we don't try to
+// re-attach to a dead groupId next time.
+async function releaseStalePersonaGroups(currentArchetypeId) {
+  const tracked = await T.storage.getPersonaGroups();
+  for (const [archetypeId, byWindow] of Object.entries(tracked || {})) {
+    const isOther = archetypeId !== currentArchetypeId;
+    for (const [windowId, groupId] of Object.entries(byWindow || {})) {
+      let tabsInGroup = [];
+      try {
+        tabsInGroup = await tabsQueryByGroupId(groupId);
+      } catch (_e) {
+        // Group might not exist anymore; fall through to storage cleanup.
+      }
+      const shouldRelease = isOther || tabsInGroup.length < 2;
+      if (!shouldRelease) continue;
+
+      if (tabsInGroup.length > 0) {
+        try {
+          await tabsUngroup(tabsInGroup.map((t) => t.id));
+        } catch (e) {
+          console.warn(
+            `[TabShame] failed to ungroup ${archetypeId}/${windowId}:`, e
+          );
+        }
+      }
+      await T.storage.clearPersonaGroupId(archetypeId, windowId).catch(() => {});
+    }
+  }
+}
+
 async function applyPersonaTabGroup(report) {
   if (!report || !report.archetype) return;
 
@@ -448,9 +531,21 @@ async function applyPersonaTabGroup(report) {
   const settings = await T.storage.getSettings();
   if (!settings.autoGroupPersonaTabs) return;
 
-  // Skip catch-alls — grouping casual_hoarder would scoop every open tab,
-  // grouping tab_maximalist would scoop 200+. Neither is useful.
   const id = report.archetype.id;
+
+  // ─── Cleanup phase ────────────────────────────────────────────────
+  // Always run before (and instead of) any create. Releases:
+  //   (a) tab groups for archetypes we've moved AWAY from (e.g. user
+  //       was Job Hunt, now Casual — the Job Hunt group sits stale in
+  //       the tab strip until we ungroup it),
+  //   (b) tab groups for the CURRENT archetype that have shrunk below
+  //       2 tabs (a 1-tab group is just visual noise — no grouping value).
+  // Without this, the Chrome tab-strip pill keeps showing the old
+  // persona forever and gets out of sync with the diagnosis.
+  await releaseStalePersonaGroups(id);
+
+  // Skip the create phase for catch-alls. Grouping casual_hoarder would
+  // scoop every open tab; grouping tab_maximalist would scoop 200+.
   if (!id || id === "casual_hoarder" || id === "tab_maximalist") return;
 
   // Sanity: chrome.tabGroups should be available with the manifest perm.

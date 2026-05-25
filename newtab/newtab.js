@@ -73,10 +73,7 @@
       // Re-apply mode now that we know the live archetype — handles the
       // (rare) case where the cached lastArchetypeId is stale.
       applyEffectiveMode(report.archetype && report.archetype.id);
-      // Casual mode renders nothing tied to the report — skip render().
-      if (!isCasualArchetype(report.archetype && report.archetype.id)) {
-        render(report);
-      }
+      render(report);
     } catch (e) {
       renderError(e);
     } finally {
@@ -93,24 +90,22 @@
     });
   }
 
-  function isCasualArchetype(archetypeId) {
-    // Treat both "no archetype yet" and the literal Casual Hoarder fallback
-    // as casual. We deliberately do NOT include tab_maximalist here — the
-    // user has crossed an extreme threshold and earned a (catch-all) tag,
-    // so the showcase still feels deserved.
-    return !archetypeId || archetypeId === "casual_hoarder";
-  }
+  // Note: there used to be a special "casual" mode that rendered a
+  // near-blank page when the user hadn't earned a specific persona.
+  // That was the trade-off for not having shortcuts on the page — we
+  // didn't want to take over the new tab from people who didn't even
+  // get a fun diagnosis. Now that Recent + Bookmark shortcuts are
+  // first-class content, casual_hoarder users get the full showcase
+  // like everyone else (and the Casual Hoarder roasts have been
+  // rewritten to be share-worthy in their own right).
 
-  function applyEffectiveMode(archetypeId) {
-    const mode = isCasualArchetype(archetypeId) ? "casual" : storedNewTabMode;
-    setBodyMode(mode);
+  function applyEffectiveMode(_archetypeId) {
+    setBodyMode(storedNewTabMode);
   }
 
   function setBodyMode(mode) {
-    els.body.classList.remove("mode-full", "mode-lite", "mode-casual");
-    if (mode === "lite") els.body.classList.add("mode-lite");
-    else if (mode === "casual") els.body.classList.add("mode-casual");
-    else els.body.classList.add("mode-full");
+    els.body.classList.remove("mode-full", "mode-lite");
+    els.body.classList.add(mode === "lite" ? "mode-lite" : "mode-full");
     // Keep the footer toggle label in sync.
     updateModeToggleLabel();
   }
@@ -119,15 +114,12 @@
   // tab count so the user sees something coherent instantly. Never blocks
   // on the worker. If storage is empty (fresh install), the placeholders
   // already on the page stay until the real report arrives.
-  //
-  // Skipped entirely for casual archetypes — there's nothing to paint in
-  // mode-casual besides the static brand tick.
   async function primeFromCache(lastArchetypeId) {
-    if (isCasualArchetype(lastArchetypeId)) return;
-
     const tabsMap = await T.storage.getAllTabs();
     const archetypes = T.ARCHETYPES || [];
-    const archetype = archetypes.find((a) => a.archetypeId === lastArchetypeId);
+    const archetype =
+      archetypes.find((a) => a.archetypeId === lastArchetypeId) ||
+      archetypes.find((a) => a.archetypeId === "casual_hoarder");
     if (!archetype) return;
 
     const cachedTabCount = Object.keys(tabsMap || {}).length;
@@ -328,11 +320,20 @@
   async function renderKind(kind) {
     const items = await fetchItemsFor(kind).catch(() => []);
     const expanded = expandedKinds.has(kind);
-    const cap = expanded
-      ? (SHORTCUT_EXPANDED_LIMITS[kind] || items.length)
-      : (SHORTCUT_LIMITS[kind] || items.length);
+    const collapsedCap = SHORTCUT_LIMITS[kind] || items.length;
+    const expandedCap = SHORTCUT_EXPANDED_LIMITS[kind] || items.length;
+    const cap = expanded ? expandedCap : collapsedCap;
     const limited = items.slice(0, cap);
-    const hasMore = items.length > cap;
+
+    // The toggle row is visible when there's anything to expand/collapse:
+    //   - collapsed AND more items exist → "show more"
+    //   - expanded AND total > collapsed cap → "show less" (so the user
+    //     can shrink back even if there were no further items to show
+    //     than what they already see)
+    const canExpand = !expanded && items.length > collapsedCap;
+    const canCollapse = expanded && items.length > collapsedCap;
+    const showToggle = canExpand || canCollapse;
+    const toggleLabel = expanded ? "show less" : "show more";
 
     document.querySelectorAll(`[data-shortcuts="${kind}"]`).forEach((root) => {
       const grid = root.querySelector(`[data-shortcuts-grid="${kind}"]`);
@@ -342,10 +343,10 @@
       // Hide entirely if the source had nothing (e.g. empty bookmark bar).
       root.hidden = items.length === 0;
 
-      // Show / hide the "show more" row. Hidden when expanded OR when
-      // there's nothing left to expand to.
       const moreRow = root.querySelector(`[data-shortcuts-more-row="${kind}"]`);
-      if (moreRow) moreRow.hidden = !hasMore;
+      const moreBtn = root.querySelector(`[data-shortcuts-more="${kind}"]`);
+      if (moreRow) moreRow.hidden = !showToggle;
+      if (moreBtn) moreBtn.textContent = toggleLabel;
     });
   }
 
@@ -393,7 +394,9 @@
 
   async function onShowMore(kind) {
     if (!kind) return;
-    expandedKinds.add(kind);
+    // Toggle: if already expanded, collapse back.
+    if (expandedKinds.has(kind)) expandedKinds.delete(kind);
+    else expandedKinds.add(kind);
     await renderKind(kind);
   }
 
