@@ -16,7 +16,7 @@
       <div class="unlock-banner" id="unlockBanner" hidden>
         <span class="unlock-emoji" id="unlockEmoji">🎉</span>
         <div class="unlock-text">
-          <div class="unlock-title">You've earned your archetype</div>
+          <div class="unlock-title" id="unlockTitle">You've earned your archetype</div>
           <div class="unlock-name" id="unlockName">…</div>
         </div>
       </div>
@@ -25,6 +25,7 @@
         <div class="hero-count" id="tabCount">--</div>
         <div class="hero-meta">
           <div class="hero-label" id="tabsLabel">TABS OPEN</div>
+          <div class="hero-skipped" id="heroSkipped" hidden></div>
           <div class="hero-band" id="scoreBand">reading the room…</div>
         </div>
       </section>
@@ -43,9 +44,9 @@
       </section>
 
       <section class="stats">
-        <div class="tile">
+        <div class="tile" title="Tabs that share an exact URL with another open tab. Closing them keeps one of each.">
           <div class="tile-value" id="tileDupes">–</div>
-          <div class="tile-label">DUPLICATES</div>
+          <div class="tile-label">EXTRA TABS · CLOSEABLE</div>
         </div>
         <div class="tile tile-haunt">
           <div class="tile-value tile-haunt-name" id="tileHaunt">—</div>
@@ -61,8 +62,11 @@
       <section class="actions">
         <button class="btn btn-primary" id="openReport">Open full report</button>
         <button class="btn btn-secondary" id="downloadCard">Generate share card</button>
+        <button class="btn btn-action" id="openTabFinder" title="Open full tab finder (Cmd+Shift+F)">
+          Find a tab · all open tabs in one grid
+        </button>
         <button class="btn btn-action" id="closeDupes" disabled>
-          <span id="closeDupesLabel">Close duplicate tabs</span>
+          <span id="closeDupesLabel">Close extras · keep one of each</span>
         </button>
         <button class="btn btn-locked" id="upgrade" disabled title="Coming in TabShame Premium">
           Upgrade · smart cleanup, history, themes

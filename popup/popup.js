@@ -13,9 +13,11 @@
     card: document.querySelector(".card"),
     unlockBanner: document.getElementById("unlockBanner"),
     unlockEmoji: document.getElementById("unlockEmoji"),
+    unlockTitle: document.getElementById("unlockTitle"),
     unlockName: document.getElementById("unlockName"),
     tabCount: document.getElementById("tabCount"),
     tabsLabel: document.getElementById("tabsLabel"),
+    heroSkipped: document.getElementById("heroSkipped"),
     scoreBand: document.getElementById("scoreBand"),
     scoreStrong: document.getElementById("scoreStrong"),
     scoreFormula: document.getElementById("scoreFormula"),
@@ -31,6 +33,7 @@
     downloadCard: document.getElementById("downloadCard"),
     closeDupes: document.getElementById("closeDupes"),
     closeDupesLabel: document.getElementById("closeDupesLabel"),
+    openTabFinder: document.getElementById("openTabFinder"),
     upgrade: document.getElementById("upgrade"),
     autoGroupToggle: document.getElementById("autoGroupToggle"),
     newTabModeSelect: document.getElementById("newTabModeSelect")
@@ -60,6 +63,13 @@
       window.close();
     });
 
+    // Open the full-bleed tab finder in a new tab. Closes the popup so
+    // the user doesn't see a tiny popup behind their new finder tab.
+    els.openTabFinder.addEventListener("click", () => {
+      chrome.tabs.create({ url: chrome.runtime.getURL("tabfinder/tabfinder.html") });
+      window.close();
+    });
+
     els.downloadCard.addEventListener("click", async () => {
       if (!currentReport) return;
       els.downloadCard.disabled = true;
@@ -82,7 +92,7 @@
       try {
         const res = await sendMessage({ type: "CLOSE_DUPLICATES" });
         const closed = (res && res.closed) || 0;
-        els.closeDupesLabel.textContent = `Closed ${closed} dup${closed === 1 ? "" : "s"} ✓`;
+        els.closeDupesLabel.textContent = `Closed ${closed} extra${closed === 1 ? "" : "s"} ✓`;
         // Refresh the report so the popup reflects the new tab state.
         const fresh = await getReport();
         currentReport = fresh;
@@ -269,6 +279,14 @@
     if (!t) return;
     els.unlockEmoji.textContent = t.toEmoji || "🎉";
     els.unlockName.textContent = t.toName || "A specific archetype";
+    // "earn" = first time crossing into any specific persona from casual.
+    // "shift" = moving between specific personas (the more-tabs-wins
+    // override or a tab-pattern change). Use different copy so users
+    // understand it's a change, not a first-time unlock.
+    const kind = t.kind || (t.from === "casual_hoarder" ? "earn" : "shift");
+    els.unlockTitle.textContent = kind === "shift"
+      ? "Your archetype just changed"
+      : "You've earned your archetype";
     els.unlockBanner.hidden = false;
   }
 
@@ -277,8 +295,8 @@
     const hasDupes = currentReport.stats.duplicateCount > 0;
     els.closeDupes.disabled = !hasDupes;
     els.closeDupes.title = hasDupes
-      ? `Close ${currentReport.stats.duplicateCount} duplicate tab(s)`
-      : "Nothing to close — no duplicates detected";
+      ? `Close ${currentReport.stats.duplicateCount} extra tab(s) · keeps one of each URL`
+      : "Nothing to close — every open tab is unique";
   }
 
   function getReport() {
@@ -295,6 +313,16 @@
     const tabCount = report.stats.tabCount;
     els.tabCount.textContent = String(tabCount);
     els.tabsLabel.textContent = tabCount === 1 ? "TAB OPEN" : "TABS OPEN";
+    // Surface the gap between Chrome's actual tab count and the diagnosis
+    // count. Hidden when skipped == 0 (no gap to explain).
+    const skipped = report.stats.skippedCount || 0;
+    if (skipped > 0) {
+      els.heroSkipped.textContent =
+        `+${skipped} skipped · Chrome / extension page${skipped === 1 ? "" : "s"}`;
+      els.heroSkipped.hidden = false;
+    } else {
+      els.heroSkipped.hidden = true;
+    }
     els.scoreBand.textContent = report.band.label;
     els.scoreStrong.textContent = `SHAME SCORE ${report.score}`;
     els.scoreFormula.textContent = report.breakdown.formula;

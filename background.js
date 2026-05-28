@@ -64,6 +64,28 @@ chrome.runtime.onStartup.addListener(async () => {
   await scheduleAlarms();
 });
 
+// Keyboard shortcut → open the tab finder page. Manifest declares
+// Cmd+Shift+F (Mac) / Ctrl+Shift+F (other). Re-uses an existing finder
+// tab if one is already open to avoid stacking duplicates.
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command !== "open-tab-finder") return;
+  const finderUrl = chrome.runtime.getURL("tabfinder/tabfinder.html");
+  try {
+    const existing = await new Promise((r) =>
+      chrome.tabs.query({ url: finderUrl }, (t) => r(t || []))
+    );
+    if (existing.length > 0) {
+      const t = existing[0];
+      chrome.tabs.update(t.id, { active: true });
+      chrome.windows.update(t.windowId, { focused: true });
+    } else {
+      chrome.tabs.create({ url: finderUrl });
+    }
+  } catch (e) {
+    console.warn("[TabShame] open-tab-finder failed:", e);
+  }
+});
+
 
 // Apply the same skip rules used by the live tab-event listeners. Without
 // this, the new-tab override page, the report page, chrome://newtab, etc.
@@ -327,70 +349,101 @@ async function notifyArchetypeTransition(report) {
   const last = await T.storage.getLastArchetypeId();
   await T.storage.setLastArchetypeId(current);
 
-  let reason = null;
-  if (last === undefined || last === null) reason = "first_run";
-  else if (current === last) reason = "no_change";
-  else if (last !== "casual_hoarder") reason = "not_from_casual";
-  else if (current === "casual_hoarder") reason = "to_casual";
+  // Three distinct change kinds, each with different UI loudness:
+  //   "earn"   casual → specific   → loud: OS notif + "!" badge + popup banner
+  //   "shift"  specific → specific → quiet: popup banner only (no OS notif)
+  //   "demote" specific → casual   → silent: clear badge, reset title
+  //   (no change / first_run)      → only tooltip refresh, no banner
+  // The "shift" case is new — it handles the "more tabs wins" override
+  // moving the user between specific personas without first dropping to
+  // casual. Without this case, opening more YouTube tabs while staying a
+  // LinkedIn Lurker would silently change the popup but leave the
+  // toolbar tooltip stale.
 
-  // Clear the badge if the user has dropped back to casual_hoarder.
-  // (Notification still suppressed — demotion shouldn't pop a notif — but
-  // the toolbar should reflect that they're no longer "in" a persona.)
-  if (current === "casual_hoarder" && last !== "casual_hoarder") {
+  // (a) ALWAYS keep the toolbar tooltip in sync — cheap, no UX cost.
+  try {
+    if (current === "casual_hoarder") {
+      chrome.action.setTitle({ title: "TabShame" });
+    } else {
+      chrome.action.setTitle({
+        title: `TabShame · You're ${report.archetype.name} ${report.archetype.emoji}`
+      });
+    }
+  } catch (_e) { /* non-fatal */ }
+
+  // (c) Demote case — clear the "!" badge so the toolbar reflects that
+  // the user is no longer "in" a specific persona. (Demotions are silent.)
+  if (current === "casual_hoarder" && last && last !== "casual_hoarder") {
     clearTransitionBadge();
+    console.log(`[TabShame] transition demote: ${last} → casual_hoarder`);
+    return { fired: false, reason: "to_casual", last, current };
   }
 
-  if (reason) {
-    console.log(`[TabShame] transition skipped (${reason}):`, { last, current });
-    return { fired: false, reason, last, current };
+  // First diagnosis ever, or no actual change.
+  if (last === undefined || last === null) {
+    return { fired: false, reason: "first_run", last, current };
+  }
+  if (current === last) {
+    return { fired: false, reason: "no_change", last, current };
+  }
+  if (current === "casual_hoarder") {
+    return { fired: false, reason: "to_casual", last, current };
   }
 
-  console.log(`[TabShame] transition fired: ${last} → ${current}`);
+  // From here, we have either "earn" (casual → specific) or "shift" (specific → specific).
+  const kind = last === "casual_hoarder" ? "earn" : "shift";
 
-  // Record the transition event so the popup can render an in-app banner
-  // (more reliable than OS notifications, which can be silenced by the OS).
-  // The popup clears `seen` when it shows the banner.
+  // Record the transition event so the popup can render an in-app banner.
+  // Same shape for both kinds; popup picks copy based on `from`.
   await T.storage.set({
     pendingTransition: {
       from: last,
       to: current,
       toName: report.archetype.name,
       toEmoji: report.archetype.emoji,
+      kind,
       at: Date.now(),
       seen: false
     }
   });
 
-  // Toolbar badge — visible regardless of OS notification permission. The
-  // badge is the most reliable signal. Cleared when the popup opens.
-  try {
-    chrome.action.setBadgeText({ text: "!" });
-    chrome.action.setBadgeBackgroundColor({ color: "#e63946" });
-    chrome.action.setBadgeTextColor({ color: "#ffffff" });
-    chrome.action.setTitle({
-      title: `TabShame · You're ${report.archetype.name} ${report.archetype.emoji}`
-    });
-  } catch (e) {
-    console.warn("[TabShame] badge update failed:", e);
+  if (kind === "earn") {
+    // Loud first-time alert: badge + OS notification.
+    try {
+      chrome.action.setBadgeText({ text: "!" });
+      chrome.action.setBadgeBackgroundColor({ color: "#e63946" });
+      chrome.action.setBadgeTextColor({ color: "#ffffff" });
+    } catch (e) {
+      console.warn("[TabShame] badge update failed:", e);
+    }
+    try {
+      chrome.notifications.create(`tabshame_transition_${Date.now()}`, {
+        type: "basic",
+        iconUrl: "assets/icon-128.png",
+        title: "TabShame · You've earned your archetype",
+        message: `${report.archetype.emoji}  You're ${report.archetype.name}. Tap to see your card.`,
+        priority: 2,
+        requireInteraction: true
+      });
+    } catch (e) {
+      console.warn("[TabShame] notification create failed:", e);
+    }
+    console.log(`[TabShame] transition EARN fired: ${last} → ${current}`);
+  } else {
+    // Quiet specific → specific shift. No OS notification (would be spam
+    // as users tip between personas). Update badge to a subtle dot so the
+    // toolbar nudges the user to glance at the popup.
+    try {
+      chrome.action.setBadgeText({ text: "•" });
+      chrome.action.setBadgeBackgroundColor({ color: "#1a1612" });
+      chrome.action.setBadgeTextColor({ color: "#ff8966" });
+    } catch (e) {
+      console.warn("[TabShame] badge update failed:", e);
+    }
+    console.log(`[TabShame] transition SHIFT (silent): ${last} → ${current}`);
   }
 
-  try {
-    chrome.notifications.create(`tabshame_transition_${Date.now()}`, {
-      type: "basic",
-      // Relative path works for the extension's own pages; getURL is also
-      // valid but some Chrome builds reject chrome-extension:// URLs in
-      // notifications. Plain relative path is the most compatible form.
-      iconUrl: "assets/icon-128.png",
-      title: "TabShame · You've earned your archetype",
-      message: `${report.archetype.emoji}  You're ${report.archetype.name}. Tap to see your card.`,
-      priority: 2,
-      requireInteraction: true
-    });
-  } catch (e) {
-    console.warn("[TabShame] notification create failed:", e);
-  }
-
-  return { fired: true, last, current };
+  return { fired: true, kind, last, current };
 }
 
 function clearTransitionBadge() {
@@ -841,6 +894,20 @@ async function buildLiveReport() {
   const tabs = await T.storage.getTabsArray();
   const diagnosis = T.archetypeEngine.diagnose(tabs);
   const report = T.shameEngine.buildReport(diagnosis, tabs);
+
+  // Compute "skipped" — tabs Chrome shows in its tab strip but we exclude
+  // from the diagnosis (chrome://, chrome-extension://, incognito-when-not-
+  // opted-in). Exposing this lets the popup explain why our tab count
+  // diverges from Chrome's. Example: Chrome=12, ours=8, skipped=4.
+  try {
+    const allOpen = await queryAllTabs();
+    const skipped = allOpen.length - tabs.length;
+    report.stats.skippedCount = Math.max(0, skipped);
+    report.stats.chromeTabCount = allOpen.length;
+  } catch (_e) {
+    report.stats.skippedCount = 0;
+    report.stats.chromeTabCount = report.stats.tabCount;
+  }
 
   // Record one snapshot per local-day. This data is collected unconditionally
   // (it's the user's own data, never transmitted) so when the Pro trend view

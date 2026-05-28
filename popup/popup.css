@@ -135,6 +135,20 @@ body {
   margin-bottom: 4px;
 }
 
+/* Skipped-tab disclosure — surfaces the gap between Chrome's tab count
+   and TabShame's tracked count. Helps users understand "Chrome says 12
+   but you say 8". Renders only when skippedCount > 0. */
+.hero-skipped {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.hero-skipped[hidden] { display: none; }
+
 .hero-band {
   font-family: var(--font-italic);
   font-style: italic;

@@ -48,6 +48,16 @@
     "newtab": "newtab/newtab.html"
   },
 
+  "commands": {
+    "open-tab-finder": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+F",
+        "mac": "Command+Shift+F"
+      },
+      "description": "Find a tab — open the TabShame tab finder"
+    }
+  },
+
   "web_accessible_resources": [
     {
       "resources": [

@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TabShame · Find out what your tabs say about you</title>
+    <meta name="description" content="A Chrome extension that diagnoses you with one of 34 archetypes based on your open tabs. Privacy-respecting, local-only, slightly meaner than a horoscope." />
+    <meta property="og:title" content="TabShame · Find out what your tabs say about you" />
+    <meta property="og:description" content="34 archetypes. Diagnosed locally. Roasted publicly. Free." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700;9..144,900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <!-- Sticky topbar — appears after scrolling past the hero ─────────── -->
+    <header class="topbar topbar-sticky" id="topbar">
+      <a href="#hero" class="topbar-brand">TAB SHAME</a>
+      <nav class="topbar-right" aria-label="Page sections">
+        <a href="#hero">Top</a>
+        <a href="#numbers">Your tabs</a>
+        <a href="#diagnosis">How it works</a>
+        <a href="#personas">Personas</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#install" class="topbar-cta">Install</a>
+      </nav>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CHAPTER 0 · HERO
+         Big serif statement + persona-name marquee + scroll cue.
+         ═══════════════════════════════════════════════════════════════ -->
+    <section class="chapter chapter-hero" id="hero">
+      <div class="hero-content">
+        <div class="hero-eyebrow reveal" data-reveal="up">A Chrome extension. Backed by data.</div>
+        <h1 class="hero-title">
+          <span class="reveal" data-reveal="up" data-delay="100">Find out what your</span>
+          <span class="reveal" data-reveal="up" data-delay="250"><em>tabs say</em> about you.</span>
+        </h1>
+        <p class="hero-sub reveal" data-reveal="up" data-delay="600">
+          34 archetypes. Diagnosed locally. Roasted publicly.
+          <br>It's a horoscope, except it's right.
+        </p>
+        <div class="hero-actions reveal" data-reveal="up" data-delay="800">
+          <a class="btn btn-primary btn-large" href="#install">Install on Chrome →</a>
+          <a class="btn btn-secondary btn-large" href="#diagnosis">See it work</a>
+        </div>
+      </div>
+
+      <!-- Marquee strip: persona names scrolling horizontally at the bottom -->
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee-track">
+          <span>💼 The LinkedIn Lurker</span>
+          <span>·</span>
+          <span>🛕 The localhost Shrine</span>
+          <span>·</span>
+          <span>🕵️ The Booking.com Detective</span>
+          <span>·</span>
+          <span>📝 The 11:47 PM Student</span>
+          <span>·</span>
+          <span>🪦 The Stack Overflow Necromancer</span>
+          <span>·</span>
+          <span>🎯 The Job Hunt Marathon</span>
+          <span>·</span>
+          <span>🌌 The Figma Multiverse</span>
+          <span>·</span>
+          <span>🛒 The Cart Cemetery</span>
+          <span>·</span>
+          <span>👑 The Tab Maximalist</span>
+          <span>·</span>
+          <span>🐌 The Casual Hoarder</span>
+          <span>·</span>
+          <!-- Duplicated for seamless loop -->
+          <span>💼 The LinkedIn Lurker</span>
+          <span>·</span>
+          <span>🛕 The localhost Shrine</span>
+          <span>·</span>
+          <span>🕵️ The Booking.com Detective</span>
+          <span>·</span>
+          <span>📝 The 11:47 PM Student</span>
+          <span>·</span>
+          <span>🪦 The Stack Overflow Necromancer</span>
+          <span>·</span>
+          <span>🎯 The Job Hunt Marathon</span>
+          <span>·</span>
+        </div>
+      </div>
+
+      <div class="scroll-cue" aria-hidden="true">
+        <span>scroll</span>
+        <span class="scroll-cue-arrow">↓</span>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CHAPTER 1 · THE NUMBERS
+         Pinned section. Big number counts up while caption morphs.
+         ═══════════════════════════════════════════════════════════════ -->
+    <section class="chapter chapter-numbers" data-pinned-chapter id="numbers">
+      <div class="pinned-stage">
+        <div class="numbers-stage" id="numbersStage">
+          <div class="numbers-eyebrow">RIGHT NOW</div>
+          <div class="numbers-big" id="numbersBig">47</div>
+          <div class="numbers-label">tabs are open</div>
+          <div class="numbers-caption" id="numbersCaption">You have tabs.</div>
+        </div>
+      </div>
+      <!-- Spacer length = chapter scroll length. 480vh ≈ ~4 viewport
+           heights of scrolling to traverse the 4 number stages — each
+           "12 → 47 → 127 → 412" beat gets ~120vh of scroll time. -->
+      <div class="pinned-spacer" style="height: 480vh;"></div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CHAPTER 2 · THE DIAGNOSIS (interactive scroll simulator)
+         Pinned browser-window mockup. Tabs accumulate as you scroll.
+         At threshold, persona pill flies in, then a roast appears.
+         ═══════════════════════════════════════════════════════════════ -->
+    <section class="chapter chapter-diagnosis" data-pinned-chapter id="diagnosis">
+      <div class="pinned-stage">
+        <div class="diagnosis-stage">
+          <div class="diagnosis-headline" id="diagnosisHeadline">
+            <span class="reveal" data-reveal="up">Open 5 tabs of the same flavor…</span>
+          </div>
+
+          <!-- Mock Chrome window ────────────────────────────────────── -->
+          <div class="browser">
+            <div class="browser-chrome">
+              <div class="browser-traffic">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="browser-tabs" id="browserTabs">
+                <!-- Tabs injected by script.js as user scrolls -->
+              </div>
+              <!-- Persona pill (Chrome tab-group style) — appears at threshold -->
+              <div class="browser-pill" id="browserPill" hidden>
+                <span class="browser-pill-emoji">💼</span>
+                <span class="browser-pill-name">The LinkedIn Lurker</span>
+              </div>
+            </div>
+
+            <div class="browser-address">
+              <span class="browser-address-fav">🔒</span>
+              <span class="browser-address-url" id="browserUrl">linkedin.com/in/…</span>
+            </div>
+
+            <div class="browser-body" id="browserBody">
+              <!-- Final reveal: persona card + roast -->
+              <div class="diagnosis-reveal" id="diagnosisReveal" hidden>
+                <div class="diagnosis-reveal-eyebrow">YOU'RE</div>
+                <div class="diagnosis-reveal-name">
+                  <span class="diagnosis-reveal-emoji">💼</span>
+                  The LinkedIn Lurker
+                </div>
+                <div class="diagnosis-reveal-stats">5 tabs · shame score 32</div>
+                <blockquote class="diagnosis-reveal-roast">
+                  "5 LinkedIn profiles open. The recruiters have seen yours. They have not replied. We see you, queen."
+                </blockquote>
+                <button class="btn btn-primary">Share this card</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Spacer length governs the simulator's pacing:
+             0.00 → 0.55  tabs accumulate one at a time (~440vh of scroll)
+             0.55 → 0.70  persona pill flies in (~120vh)
+             0.70 → 1.00  diagnosis reveal block appears (~240vh)
+           800vh total gives each beat the runway to land without feeling
+           rushed; users should be able to read each headline before the
+           next state kicks in. -->
+      <div class="pinned-spacer" style="height: 800vh;"></div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CHAPTER 3 · 34 PERSONAS
+         Reveal-on-scroll grid. Color-coded category dots.
+         ═══════════════════════════════════════════════════════════════ -->
+    <section class="chapter chapter-personas" id="personas">
+      <div class="chapter-inner">
+        <p class="chapter-eyebrow reveal" data-reveal="up">Thirty-four ways to be diagnosed</p>
+        <h2 class="chapter-title reveal" data-reveal="up" data-delay="100">
+          One of them <em>is</em> you.<br>
+          We're not telling which.
+        </h2>
+        <p class="chapter-sub reveal" data-reveal="up" data-delay="200">
+          Each archetype unlocks when you cross its tab threshold. A roast appears. A share card waits. Click for the receipts.
+        </p>
+
+        <div class="persona-grid">
+          <a class="persona-card reveal" data-reveal="up" href="/personas/linkedin-lurker">
+            <span class="persona-emoji">💼</span>
+            <span class="persona-name">The LinkedIn Lurker</span>
+            <span class="persona-recipe">5+ profiles · 0 messages sent</span>
+          </a>
+          <a class="persona-card reveal" data-reveal="up" data-delay="60" href="/personas/booking-detective">
+            <span class="persona-emoji">🕵️</span>
+            <span class="persona-name">The Booking.com Detective</span>
+            <span class="persona-recipe">5+ booking tabs · trip not booked</span>
+          </a>
+          <a class="persona-card reveal" data-reveal="up" data-delay="120" href="/personas/midnight-student">
+            <span class="persona-emoji">📝</span>
+            <span class="persona-name">The 11:47 PM Student</span>
+            <span class="persona-recipe">5+ research tabs · after 10pm</span>
+          </a>
+          <a class="persona-card reveal" data-reveal="up" data-delay="180" href="/personas/localhost-shrine">
+            <span class="persona-emoji">🛕</span>
+            <span class="persona-name">The localhost Shrine</span>
+            <span class="persona-recipe">5+ localhost ports · half 502'd</span>
+          </a>
+          <a class="persona-card reveal" data-reveal="up" data-delay="60" href="/personas/stack-overflow-necromancer">
+            <span class="persona-emoji">🪦</span>
+            <span class="persona-name">The Stack Overflow Necromancer</span>
+            <span class="persona-recipe">same SO question · 5+ times</span>
+          </a>
+          <a class="persona-card reveal" data-reveal="up" data-delay="120" href="/personas/figma-multiverse">
+            <span class="persona-emoji">🌌</span>
+            <span class="persona-name">The Figma Multiverse</span>
+            <span class="persona-recipe">5+ Figma files · one named FINAL</span>
+          </a>
+          <a class="persona-card reveal" data-reveal="up" data-delay="180" href="/personas/job-hunt-marathon">
+            <span class="persona-emoji">🎯</span>
+            <span class="persona-name">The Job Hunt Marathon</span>
+            <span class="persona-recipe">5+ LinkedIn + 1 ATS · in motion</span>
+          </a>
+          <a class="persona-card reveal" data-reveal="up" data-delay="240" href="/personas/cart-cemetery">
+            <span class="persona-emoji">🛒</span>
+            <span class="persona-name">The Cart Cemetery</span>
+            <span class="persona-recipe">5+ shopping tabs · cart abandoned</span>
+          </a>
+          <a class="persona-card reveal" data-reveal="up" data-delay="120" href="/personas/tab-maximalist">
+            <span class="persona-emoji">👑</span>
+            <span class="persona-name">The Tab Maximalist</span>
+            <span class="persona-recipe">200+ tabs · multiple windows</span>
+          </a>
+        </div>
+
+        <p class="chapter-cta reveal" data-reveal="up">
+          <a href="/personas" class="link-arrow">See all 34 →</a>
+        </p>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CHAPTER 4 · SHARE TRIPTYCH
+         Three cards, three formats, animated entrance.
+         ═══════════════════════════════════════════════════════════════ -->
+    <section class="chapter chapter-share" id="share">
+      <div class="chapter-inner">
+        <p class="chapter-eyebrow reveal" data-reveal="up">The viral output</p>
+        <h2 class="chapter-title reveal" data-reveal="up" data-delay="100">
+          Built to be <em>screenshotted.</em>
+        </h2>
+        <p class="chapter-sub reveal" data-reveal="up" data-delay="200">
+          Every diagnosis comes with a PNG sized for X / Threads / LinkedIn, Instagram feed, or Stories. Caption optional. Roast included.
+        </p>
+
+        <div class="share-triptych">
+          <figure class="share-card reveal" data-reveal="up" data-delay="100">
+            <div class="share-card-canvas share-card-twitter">
+              <span class="share-card-emoji">💼</span>
+              <span class="share-card-name">The LinkedIn Lurker</span>
+              <span class="share-card-stat">5 tabs · score 32</span>
+            </div>
+            <figcaption>
+              <span class="share-card-format">X / Threads / LinkedIn</span>
+              <span class="share-card-spec">16:9 · 1200×675</span>
+            </figcaption>
+          </figure>
+
+          <figure class="share-card reveal" data-reveal="up" data-delay="220">
+            <div class="share-card-canvas share-card-instagram">
+              <span class="share-card-emoji">🛕</span>
+              <span class="share-card-name">The localhost Shrine</span>
+              <span class="share-card-stat">8 ports · score 51</span>
+            </div>
+            <figcaption>
+              <span class="share-card-format">Instagram feed</span>
+              <span class="share-card-spec">4:5 · 1080×1350</span>
+            </figcaption>
+          </figure>
+
+          <figure class="share-card reveal" data-reveal="up" data-delay="340">
+            <div class="share-card-canvas share-card-story">
+              <span class="share-card-emoji">🎯</span>
+              <span class="share-card-name">The Job Hunt Marathon</span>
+              <span class="share-card-stat">12 tabs · score 68</span>
+            </div>
+            <figcaption>
+              <span class="share-card-format">Stories &amp; Reels</span>
+              <span class="share-card-spec">9:16 · 1080×1920</span>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CHAPTER 5 · PRIVACY
+         Bold typographic statement + network-tab visual.
+         ═══════════════════════════════════════════════════════════════ -->
+    <section class="chapter chapter-privacy" id="privacy">
+      <div class="chapter-inner">
+        <p class="chapter-eyebrow reveal" data-reveal="up">Privacy</p>
+        <h2 class="chapter-title chapter-title-huge reveal" data-reveal="up" data-delay="100">
+          We see <em>nothing.</em>
+        </h2>
+        <p class="chapter-sub reveal" data-reveal="up" data-delay="200">
+          Most extensions promise privacy and ship a tracking pixel anyway. We don't have the infrastructure to betray you.
+        </p>
+
+        <div class="privacy-split">
+          <ul class="privacy-bullets reveal" data-reveal="up" data-delay="300">
+            <li>Zero network requests for analytics, telemetry, or tab data.</li>
+            <li>No accounts. No emails. No server. No cloud sync.</li>
+            <li>Optional permissions (Recent sites, Bookmark Bar) read only local Chrome data — never us.</li>
+            <li>Open DevTools → Network. Watch it stay empty. That's the whole pitch.</li>
+          </ul>
+
+          <!-- Mock DevTools panel showing 0 requests -->
+          <div class="devtools-mock reveal" data-reveal="up" data-delay="400">
+            <div class="devtools-tabbar">
+              <span>Elements</span>
+              <span class="active">Network</span>
+              <span>Console</span>
+              <span>Sources</span>
+            </div>
+            <div class="devtools-body">
+              <div class="devtools-row devtools-header">
+                <span>Name</span>
+                <span>Status</span>
+                <span>Size</span>
+              </div>
+              <div class="devtools-empty">
+                <div class="devtools-empty-num">0</div>
+                <div class="devtools-empty-label">requests · 0 B transferred</div>
+                <div class="devtools-empty-sub">recording network activity…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CHAPTER 6 · INSTALL
+         Full-bleed final CTA.
+         ═══════════════════════════════════════════════════════════════ -->
+    <section class="chapter chapter-install" id="install">
+      <div class="install-stage">
+        <h2 class="install-title reveal" data-reveal="up">
+          Diagnose <em>yourself.</em>
+        </h2>
+        <p class="install-sub reveal" data-reveal="up" data-delay="100">
+          47 seconds. 34 possibilities. One roast.<br>
+          Cmd+W exists. You just don't believe in it.
+        </p>
+        <div class="install-actions reveal" data-reveal="up" data-delay="200">
+          <a class="btn btn-primary btn-large" href="https://chrome.google.com/webstore/detail/REPLACE_WITH_EXTENSION_ID" target="_blank" rel="noopener">
+            Install on Chrome →
+          </a>
+        </div>
+        <p class="install-meta reveal" data-reveal="up" data-delay="300">
+          Free forever · Works on Chrome, Brave, Edge, Arc · No account · No server
+        </p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>TAB SHAME · made with mild contempt</span>
+      <span>
+        <a href="/personas">personas</a> ·
+        <a href="/gallery">gallery</a> ·
+        <a href="/privacy">privacy</a> ·
+        <a href="/faq">FAQ</a>
+      </span>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
