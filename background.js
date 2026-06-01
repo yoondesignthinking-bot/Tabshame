@@ -107,6 +107,62 @@ function isTrackableTab(tab) {
   return isTrackableUrl(tab.url || tab.pendingUrl || "");
 }
 
+// Tracking parameters that almost always vary per click but don't change
+// the underlying destination page. We strip these before comparing URLs
+// for duplicate detection so "linkedin.com/in/alice opened from search"
+// and "…opened from feed" count as the same tab.
+const TRACKING_PARAMS = new Set([
+  // Universal analytics
+  "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "utm_id", "utm_name",
+  "fbclid", "gclid", "msclkid", "yclid", "dclid", "wbraid", "gbraid",
+  "_ga", "_gl", "mc_cid", "mc_eid", "mc_tc", "_hsenc", "_hsmi",
+  "ref", "ref_src", "ref_url", "referrer",
+  // LinkedIn
+  "lipi", "trk", "trkInfo", "refId", "midToken", "midSig", "originalSubdomain",
+  // YouTube share/recommend tracking
+  "feature", "si", "pp", "ab_channel",
+  // Twitter/X share params
+  "s", "t", "cxt", "twclid",
+  // GitHub source-context params
+  "tab", "source",
+  // Generic share IDs
+  "share_id", "shareId", "share", "sharer"
+]);
+
+/**
+ * Normalize a URL for duplicate-detection purposes. Strips known tracking
+ * params and the fragment; sorts remaining params for stable comparison.
+ * Returns the original string if URL parsing fails (e.g. chrome:// pages
+ * that don't parse cleanly in older engines).
+ */
+function normalizeUrl(url) {
+  if (!url) return "";
+  try {
+    const u = new URL(url);
+    // Drop tracking params
+    const keep = [];
+    for (const [k, v] of u.searchParams.entries()) {
+      if (!TRACKING_PARAMS.has(k)) keep.push([k, v]);
+    }
+    // Sort remaining params alphabetically so "?a=1&b=2" and "?b=2&a=1"
+    // hash to the same key.
+    keep.sort((a, b) => a[0].localeCompare(b[0]));
+    const sorted = new URLSearchParams();
+    for (const [k, v] of keep) sorted.append(k, v);
+    u.search = sorted.toString();
+    // Drop the fragment — same page even if anchored differently
+    u.hash = "";
+    // Trim a trailing slash from the path for stem comparison
+    // (e.g. "/foo" and "/foo/" treated equal).
+    if (u.pathname.length > 1 && u.pathname.endsWith("/")) {
+      u.pathname = u.pathname.slice(0, -1);
+    }
+    return u.toString();
+  } catch (_e) {
+    return url;
+  }
+}
+
 async function importExistingTabs() {
   const tabs = (await queryAllTabs()).filter(isTrackableTab);
   const now = Date.now();
@@ -760,6 +816,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       .catch((err) => sendResponse({ ok: false, error: String(err) }));
     return true;
   }
+  if (msg && msg.type === "CLOSE_ALL_FROM_DOMAIN") {
+    // Ungated per-haunt close — fired by the × button next to each row
+    // in the report's TOP HAUNTS list. Distinct from CLOSE_BY_DOMAIN
+    // (Pro, tracked-subset only); this one operates on ALL open tabs.
+    closeAllFromDomain(msg.domain)
+      .then((closed) => sendResponse({ ok: true, closed }))
+      .catch((err) => sendResponse({ ok: false, error: String(err) }));
+    return true;
+  }
   if (msg && msg.type === "CLOSE_BY_DOMAIN") {
     cleanupGated("smartCleanupByDomain", () => closeTabsByDomain(msg.domain))
       .then((res) => sendResponse({ ok: true, ...res }))
@@ -809,36 +874,115 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 });
 
 // ─── cleanup actions ─────────────────────────────────────────────────────
-// Free: close exact-URL duplicates. Keeps the most recently active tab from
-// each duplicate group. Returns the number of tabs actually closed.
+// Free: collapse same-site tabs down to one. Operates per HOSTNAME (not
+// exact URL), so 5 LinkedIn tabs that go to 5 different profiles still
+// count as duplicates of each other and the button keeps only one.
+// This matches the user's mental model — "I have 5 LinkedIn tabs open"
+// reads as a single haunt, regardless of whether each tab is on a
+// different page within the site.
+//
+// Pinned-tab safety: a pinned tab represents an explicit user
+// commitment, so we never close one. If a group has any pinned tabs,
+// they ALL survive; we only close the unpinned tabs in that group. If
+// a group has no pinned tabs, we keep the most relevant unpinned one
+// (active beats inactive, then first-encountered) and close the rest.
+//
+// Returns the number of tabs actually closed.
 async function closeDuplicateTabs() {
-  await reconcileWithOpenTabs();
-  const tabs = await T.storage.getTabsArray();
-  const groups = new Map();
-  for (const t of tabs) {
-    if (!t.url) continue;
-    if (!groups.has(t.url)) groups.set(t.url, []);
-    groups.get(t.url).push(t);
-  }
+  const allTabs = await queryAllTabs();
+  const groups = collectHostGroups(allTabs);
 
   const idsToClose = [];
   for (const [, group] of groups) {
     if (group.length < 2) continue;
-    // Keep the most recently active. Close the rest.
-    group.sort((a, b) => (b.lastActiveAt || 0) - (a.lastActiveAt || 0));
-    for (let i = 1; i < group.length; i++) idsToClose.push(group[i].id);
+    const pinned = group.filter((t) => t.pinned);
+    const unpinned = group.filter((t) => !t.pinned);
+    if (pinned.length > 0) {
+      // Pinned tabs already represent "the kept one(s)". Close everything
+      // unpinned in the group.
+      for (const t of unpinned) idsToClose.push(t.id);
+    } else {
+      unpinned.sort((a, b) => {
+        if (a.active !== b.active) return a.active ? -1 : 1;
+        return 0;
+      });
+      for (let i = 1; i < unpinned.length; i++) idsToClose.push(unpinned[i].id);
+    }
   }
 
   if (idsToClose.length === 0) return 0;
 
   await new Promise((resolve) => {
     chrome.tabs.remove(idsToClose, () => {
-      // Even if some IDs fail (tab already closed), the callback fires.
+      // Callback fires even when some IDs already closed — that's fine.
       resolve();
     });
   });
 
-  // chrome.tabs.onRemoved will sweep storage; reconcile to be safe.
+  // Bring our tracked subset back in sync with reality.
+  await reconcileWithOpenTabs();
+  return idsToClose.length;
+}
+
+// Build a hostname → tabs map used by both closeDuplicateTabs and the
+// report's "duplicated sites" count. Two tabs end up in the same bucket
+// iff they share a hostname after stripping `www.` (case-insensitive).
+// Tabs without a parseable URL are skipped — there's nothing meaningful
+// to group on.
+function collectHostGroups(allTabs) {
+  const groups = new Map();
+  for (const t of allTabs) {
+    const raw = t.url || t.pendingUrl || "";
+    if (!raw) continue;
+    const h = T.archetypeEngine
+      .hostnameOf(raw)
+      .replace(/^www\./, "")
+      .toLowerCase();
+    if (!h) continue;
+    if (!groups.has(h)) groups.set(h, []);
+    groups.get(h).push(t);
+  }
+  return groups;
+}
+
+// Same arithmetic as closeDuplicateTabs, but returns just a count of
+// closeable tabs. Used to populate the "duplicated sites" / "extras"
+// surface numbers so they match what the close button will actually do.
+function countCloseableExtras(allTabs) {
+  const groups = collectHostGroups(allTabs);
+  let extras = 0;
+  for (const [, group] of groups) {
+    if (group.length < 2) continue;
+    const pinnedCount = group.filter((t) => t.pinned).length;
+    if (pinnedCount > 0) {
+      extras += group.length - pinnedCount;
+    } else {
+      extras += group.length - 1;
+    }
+  }
+  return extras;
+}
+
+// Per-haunt close (used by the report's TOP HAUNTS list × button).
+// Operates on EVERY open Chrome tab — not the diagnosis-tracked subset —
+// so it matches what the user sees in their tab strip. Matches `domain`
+// exactly OR any subdomain of it (e.g. `youtube.com` also closes
+// `m.youtube.com`). Pinned tabs are preserved so we don't nuke something
+// the user explicitly committed to.
+async function closeAllFromDomain(domain) {
+  if (!domain) throw new Error("domain required");
+  const target = String(domain).replace(/^www\./, "").toLowerCase();
+  const allTabs = await queryAllTabs();
+  const idsToClose = [];
+  for (const t of allTabs) {
+    if (t.pinned) continue;
+    const raw = t.url || t.pendingUrl || "";
+    const h = T.archetypeEngine.hostnameOf(raw).replace(/^www\./, "").toLowerCase();
+    if (!h) continue;
+    if (h === target || h.endsWith("." + target)) idsToClose.push(t.id);
+  }
+  if (idsToClose.length === 0) return 0;
+  await new Promise((resolve) => chrome.tabs.remove(idsToClose, () => resolve()));
   await reconcileWithOpenTabs();
   return idsToClose.length;
 }
@@ -895,18 +1039,53 @@ async function buildLiveReport() {
   const diagnosis = T.archetypeEngine.diagnose(tabs);
   const report = T.shameEngine.buildReport(diagnosis, tabs);
 
-  // Compute "skipped" — tabs Chrome shows in its tab strip but we exclude
-  // from the diagnosis (chrome://, chrome-extension://, incognito-when-not-
-  // opted-in). Exposing this lets the popup explain why our tab count
-  // diverges from Chrome's. Example: Chrome=12, ours=8, skipped=4.
+  // Make the reported tab count + duplicate count match what the user
+  // actually SEES in their tab strip — not just the diagnosis-tracked
+  // subset. Persona classification still runs on the tracked subset
+  // (chrome://, chrome-extension://, incognito are excluded above), but
+  // the surface numbers should match Chrome's reality so "5 open · 1
+  // closeable" describes the user's actual visible state.
   try {
     const allOpen = await queryAllTabs();
-    const skipped = allOpen.length - tabs.length;
-    report.stats.skippedCount = Math.max(0, skipped);
-    report.stats.chromeTabCount = allOpen.length;
+    report.stats.tabCount = allOpen.length;          // ← Chrome's count
+    report.stats.diagnosedTabCount = tabs.length;    // tracked subset
+    report.stats.skippedCount = Math.max(0, allOpen.length - tabs.length);
+
+    // "Duplicated sites" across ALL open tabs — counted by hostname so
+    // 5 LinkedIn profiles on 5 different paths are treated as duplicates
+    // of each other. This intentionally matches Close Extras' grouping
+    // so the number the user sees ("4 closeable") matches what the
+    // button will actually close. Pinned tabs survive that close, so
+    // they don't get counted as closeable here either.
+    report.stats.duplicateCount = countCloseableExtras(allOpen);
+
+    // Re-compute the score + breakdown against the NEW stats so the
+    // band label (e.g. "feral", "ambitious") tracks the actual visible
+    // numbers. The score itself + formula are no longer rendered in
+    // any UI as of Jun 2026 — but they're still written into the daily
+    // snapshot (for the future Pro trend view) and they still drive
+    // bandFor(score), so the math has to match.
+    if (T.shameEngine && T.shameEngine.computeScoreBreakdown) {
+      const bd = T.shameEngine.computeScoreBreakdown(report.stats);
+      report.score = bd.total;
+      report.breakdown = bd;
+      report.band = T.shameEngine.bandFor(bd.total);
+    }
+
+    // Persona-specific count: how many tabs match the persona's primary
+    // rule (e.g., 8 LinkedIn tabs for The LinkedIn Lurker). Read from
+    // the diagnosis's vars — the var name varies per persona but the
+    // FIRST var is always the primary rule's matched count. Falls back
+    // to undefined for catch-all archetypes that have no primary count.
+    const varEntries = Object.entries(diagnosis.vars || {});
+    const primaryVar = varEntries.find(([k]) => k !== "tabCount");
+    if (primaryVar) {
+      report.stats.personaTabCount = primaryVar[1];
+      report.stats.personaTabVar = primaryVar[0];
+    }
   } catch (_e) {
     report.stats.skippedCount = 0;
-    report.stats.chromeTabCount = report.stats.tabCount;
+    report.stats.diagnosedTabCount = report.stats.tabCount;
   }
 
   // Record one snapshot per local-day. This data is collected unconditionally

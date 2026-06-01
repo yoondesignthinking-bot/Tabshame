@@ -19,8 +19,6 @@
     bigCount: document.getElementById("bigCount"),
     bigTabsLabel: document.getElementById("bigTabsLabel"),
     bigScoreBand: document.getElementById("bigScoreBand"),
-    heroScoreStrong: document.getElementById("heroScoreStrong"),
-    heroScoreFormula: document.getElementById("heroScoreFormula"),
     heroRoast: document.getElementById("heroRoast"),
     revealEmoji: document.getElementById("revealEmoji"),
     revealName: document.getElementById("revealName"),
@@ -79,8 +77,6 @@
     const tabCount = report.stats.tabCount;
     els.bigTabsLabel.textContent = tabCount === 1 ? "TAB OPEN" : "TABS OPEN";
     els.bigScoreBand.textContent = report.band.label;
-    els.heroScoreStrong.textContent = `SHAME SCORE ${report.score}`;
-    els.heroScoreFormula.textContent = report.breakdown.formula;
     els.heroRoast.textContent = `"${report.roast}"`;
     animateCount(els.bigCount, 0, tabCount, 1400);
   }
@@ -117,12 +113,60 @@
       const name = document.createElement("span");
       name.className = "domain-name";
       name.textContent = d.domain;
+      const meta = document.createElement("span");
+      meta.className = "domain-meta";
       const count = document.createElement("span");
       count.className = "domain-count";
       count.textContent = `${d.count} TAB${d.count === 1 ? "" : "S"}`;
+      const closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "domain-close";
+      closeBtn.setAttribute(
+        "aria-label",
+        `Close all ${d.count} tab${d.count === 1 ? "" : "s"} from ${d.domain}`
+      );
+      closeBtn.title = `Close all ${d.count} tab${d.count === 1 ? "" : "s"} from ${d.domain}`;
+      closeBtn.textContent = "×";
+      closeBtn.addEventListener("click", () => closeDomainTabs(d.domain, closeBtn, count));
+      meta.appendChild(count);
+      meta.appendChild(closeBtn);
       li.appendChild(name);
-      li.appendChild(count);
+      li.appendChild(meta);
       els.domainList.appendChild(li);
+    }
+  }
+
+  // Closes all open tabs from one haunt. Optimistically swaps the row into
+  // a "Closing…" state, fires the message, then re-fetches the report and
+  // re-renders so the row either disappears (haunt empty) or shows the new
+  // smaller count. Pinned tabs are preserved on the background side.
+  async function closeDomainTabs(domain, btn, countEl) {
+    if (!domain) return;
+    const originalCount = countEl.textContent;
+    btn.disabled = true;
+    btn.textContent = "…";
+    countEl.textContent = "closing";
+    try {
+      const res = await sendMessage({ type: "CLOSE_ALL_FROM_DOMAIN", domain });
+      const closed = (res && res.closed) || 0;
+      const fresh = await getReport();
+      currentReport = fresh;
+      renderHero(fresh);
+      renderTiles(fresh);
+      renderDomains(fresh);
+      await renderPreviews(fresh);
+      updateCleanupState();
+      // Brief flash so the user sees something landed even if the row
+      // disappears from the list immediately.
+      if (closed === 0) {
+        countEl.textContent = "nothing to close";
+        setTimeout(() => (countEl.textContent = originalCount), 1400);
+      }
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = "×";
+      countEl.textContent = "failed";
+      setTimeout(() => (countEl.textContent = originalCount), 1600);
     }
   }
 
@@ -187,7 +231,7 @@
       try {
         const res = await sendMessage({ type: "CLOSE_DUPLICATES" });
         const closed = (res && res.closed) || 0;
-        els.closeDupesReportSub.textContent = `Closed ${closed} dup${closed === 1 ? "" : "s"} ✓`;
+        els.closeDupesReportSub.textContent = `Closed ${closed} extra${closed === 1 ? "" : "s"} ✓`;
         const fresh = await getReport();
         currentReport = fresh;
         renderHero(fresh);
@@ -213,8 +257,8 @@
     const hasDupes = currentReport.stats.duplicateCount > 0;
     els.closeDupesReport.disabled = !hasDupes;
     els.closeDupesReport.title = hasDupes
-      ? `Close ${currentReport.stats.duplicateCount} duplicate tab(s) — keeps one of each`
-      : "Nothing to close — no duplicates detected";
+      ? `Close ${currentReport.stats.duplicateCount} same-site tab(s) — keeps one per site`
+      : "Nothing to close — every open tab is from a different site";
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────

@@ -32,8 +32,7 @@
           </div>
           <div class="hero-stats">
             <span class="hero-count" id="tabCount">--</span>
-            <span class="hero-stats-divider">·</span>
-            <span class="hero-score">shame score <span id="scoreValue">--</span></span>
+            <span class="hero-stats-divider" hidden>·</span>
           </div>
         </section>
 
@@ -42,9 +41,16 @@
         </section>
 
         <section class="actions">
-          <button class="btn btn-primary" id="downloadCard">Share card</button>
+          <button class="btn btn-primary" id="downloadCard" title="Downloads X / Threads (16:9), Instagram feed (4:5), and Stories (9:16)">Share cards · all formats</button>
+          <button
+            class="btn btn-secondary"
+            id="openTabFinder"
+            title="Open full tab finder (Cmd+Shift+F)"
+          >
+            Find a tab · all open tabs in one grid
+          </button>
           <button class="btn btn-secondary" id="closeDupes" disabled>
-            <span id="closeDupesLabel">Close duplicates</span>
+            <span id="closeDupesLabel">Close extras · keep one of each</span>
           </button>
           <button class="btn btn-tertiary" id="openReport">Open full report</button>
         </section>

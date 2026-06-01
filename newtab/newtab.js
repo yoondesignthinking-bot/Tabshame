@@ -22,9 +22,9 @@
     archetypeEmoji: document.getElementById("archetypeEmoji"),
     archetypeName: document.getElementById("archetypeName"),
     tabCount: document.getElementById("tabCount"),
-    scoreValue: document.getElementById("scoreValue"),
     roastLine: document.getElementById("roastLine"),
     downloadCard: document.getElementById("downloadCard"),
+    openTabFinder: document.getElementById("openTabFinder"),
     closeDupes: document.getElementById("closeDupes"),
     closeDupesLabel: document.getElementById("closeDupesLabel"),
     openReport: document.getElementById("openReport"),
@@ -140,7 +140,6 @@
     els.archetypeEmoji.textContent = archetype.emoji;
     els.archetypeName.textContent = archetype.name;
     els.tabCount.textContent = String(report.stats.tabCount);
-    els.scoreValue.textContent = String(report.score);
     els.roastLine.textContent = `"${report.roast}"`;
 
     updateActionStates();
@@ -151,15 +150,14 @@
     const hasDupes = currentReport.stats.duplicateCount > 0;
     els.closeDupes.disabled = !hasDupes;
     els.closeDupes.title = hasDupes
-      ? `Close ${currentReport.stats.duplicateCount} duplicate tab(s)`
-      : "No duplicates to close";
+      ? `Close ${currentReport.stats.duplicateCount} same-site tab(s) — keeps one per site, pinned tabs preserved`
+      : "Nothing to close — every open tab is from a different site";
   }
 
   function renderError(e) {
     els.archetypeName.textContent = "Diagnosis unavailable";
     els.archetypeEmoji.textContent = "🐌";
     els.tabCount.textContent = "—";
-    els.scoreValue.textContent = "—";
     els.roastLine.textContent = `"${String(e && e.message ? e.message : e)}"`;
   }
 
@@ -168,16 +166,57 @@
       chrome.tabs.create({ url: chrome.runtime.getURL("report/report.html") });
     });
 
+    // Find-a-tab — re-uses an open tab-finder tab if one exists so we
+    // don't stack copies. Matches the popup and the Cmd+Shift+F path.
+    if (els.openTabFinder) {
+      els.openTabFinder.addEventListener("click", async () => {
+        const finderUrl = chrome.runtime.getURL("tabfinder/tabfinder.html");
+        try {
+          const existing = await new Promise((r) =>
+            chrome.tabs.query({ url: finderUrl }, (t) => r(t || []))
+          );
+          if (existing.length > 0) {
+            const t = existing[0];
+            chrome.tabs.update(t.id, { active: true });
+            chrome.windows.update(t.windowId, { focused: true });
+          } else {
+            chrome.tabs.create({ url: finderUrl });
+          }
+        } catch (_e) {
+          chrome.tabs.create({ url: finderUrl });
+        }
+      });
+    }
+
     els.downloadCard.addEventListener("click", async () => {
       if (!currentReport) return;
       const original = els.downloadCard.textContent;
       els.downloadCard.disabled = true;
-      els.downloadCard.textContent = "Rendering…";
+      const totalFormats = Object.keys(T.cardRenderer.FORMATS).length;
+      els.downloadCard.textContent = `Rendering 1/${totalFormats}…`;
       try {
-        await T.cardRenderer.downloadCard(currentReport, "twitter");
+        const { downloaded, failed } = await T.cardRenderer.downloadAllCards(
+          currentReport,
+          {
+            onProgress: ({ done, total }) => {
+              if (done < total) {
+                els.downloadCard.textContent = `Rendering ${done + 1}/${total}…`;
+              } else {
+                els.downloadCard.textContent = `Downloaded ${done} ✓`;
+              }
+            }
+          }
+        );
+        if (failed.length > 0) {
+          els.downloadCard.textContent = `Downloaded ${downloaded.length}, ${failed.length} failed`;
+        }
+      } catch (_e) {
+        els.downloadCard.textContent = "Render failed";
       } finally {
-        els.downloadCard.disabled = false;
-        els.downloadCard.textContent = original;
+        setTimeout(() => {
+          els.downloadCard.disabled = false;
+          els.downloadCard.textContent = original;
+        }, 1400);
       }
     });
 

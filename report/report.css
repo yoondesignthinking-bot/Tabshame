@@ -6,18 +6,46 @@
  */
 
 :root {
+  /* Light theme tokens (default — used when system is not in dark mode) */
   --ink: #1a1612;
   --ink-soft: rgba(26, 22, 18, 0.6);
   --ink-faint: rgba(26, 22, 18, 0.18);
+  --ink-ghost: rgba(26, 22, 18, 0.25);
   --paper: #f4ede0;
+  --paper-elev: rgba(255, 255, 255, 0.55);
+  --paper-elev-soft: rgba(255, 255, 255, 0.45);
+  --shadow-card: rgba(26, 22, 18, 0.08);
   --peach: #ff8966;
   --lavender: #b8a4ff;
   --shame: #e63946;
+  --bg-glow-lavender: rgba(184, 164, 255, 0.45);
+  --bg-glow-peach: rgba(255, 137, 102, 0.45);
 
   --font-serif: "Fraunces", "Instrument Serif", Georgia, serif;
   --font-italic: "Instrument Serif", "Fraunces", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Dark theme — follows the user's system preference automatically.
+   Inverts paper↔ink, mutes accents slightly, swaps the elevated tile
+   surface from white-on-paper to light-on-ink. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #f0e6d4;
+    --ink-soft: rgba(240, 230, 212, 0.7);
+    --ink-faint: rgba(240, 230, 212, 0.2);
+    --ink-ghost: rgba(240, 230, 212, 0.28);
+    --paper: #1c1612;
+    --paper-elev: rgba(255, 255, 255, 0.06);
+    --paper-elev-soft: rgba(255, 255, 255, 0.04);
+    --shadow-card: rgba(0, 0, 0, 0.35);
+    --peach: #ff9a7a;
+    --lavender: #c2b1ff;
+    --shame: #f06876;
+    --bg-glow-lavender: rgba(184, 164, 255, 0.18);
+    --bg-glow-peach: rgba(255, 137, 102, 0.16);
+  }
 }
 
 * {
@@ -29,8 +57,8 @@ body {
   margin: 0;
   padding: 0;
   background:
-    radial-gradient(1200px 800px at 90% -10%, rgba(184, 164, 255, 0.45), transparent 60%),
-    radial-gradient(900px 700px at -10% 110%, rgba(255, 137, 102, 0.45), transparent 60%),
+    radial-gradient(1200px 800px at 90% -10%, var(--bg-glow-lavender), transparent 60%),
+    radial-gradient(900px 700px at -10% 110%, var(--bg-glow-peach), transparent 60%),
     var(--paper);
   color: var(--ink);
   font-family: var(--font-sans);
@@ -103,26 +131,6 @@ body {
   color: var(--ink);
 }
 
-.hero-score-line {
-  margin: 16px auto 0;
-  max-width: 720px;
-  font-family: var(--font-italic);
-  font-style: italic;
-  font-size: 18px;
-  color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
-}
-
-.hero-score-strong {
-  font-family: var(--font-mono);
-  font-style: normal;
-  font-weight: 600;
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  color: var(--ink);
-  margin-right: 10px;
-}
-
 .hero-roast {
   font-family: var(--font-italic);
   font-style: italic;
@@ -138,7 +146,7 @@ body {
   text-align: center;
   margin-bottom: 64px;
   padding: 40px 24px;
-  background: rgba(255, 255, 255, 0.45);
+  background: var(--paper-elev-soft);
   border-radius: 20px;
 }
 
@@ -205,7 +213,7 @@ body {
 }
 
 .tile {
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--paper-elev);
   border-radius: 16px;
   padding: 28px 16px 22px;
   text-align: center;
@@ -272,6 +280,55 @@ body {
   letter-spacing: 0.04em;
 }
 
+/* Right-side cluster: tab count + × close button. */
+.domain-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* × close button — closes all open tabs from this haunt. Stays subtle
+   until the row is hovered, then turns shame-red to make the destructive
+   intent obvious. */
+.domain-close {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--ink-ghost);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    transform 0.06s ease;
+}
+
+.domain-list li:hover .domain-close {
+  border-color: var(--shame);
+  color: var(--shame);
+}
+
+.domain-close:hover {
+  background: var(--shame);
+  color: var(--paper);
+  border-color: var(--shame);
+}
+
+.domain-close:active {
+  transform: translateY(1px);
+}
+
+.domain-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Share section ────────────────────────────────────────── */
 .share {
   margin-bottom: 64px;
@@ -287,7 +344,7 @@ body {
 .preview {
   margin: 0;
   text-align: center;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--paper-elev);
   padding: 16px;
   border-radius: 16px;
   /* Vertical flex so the canvas, caption, and button can be aligned
@@ -310,7 +367,7 @@ body {
   object-fit: contain;
   border-radius: 8px;
   display: block;
-  box-shadow: 0 8px 24px rgba(26, 22, 18, 0.08);
+  box-shadow: 0 8px 24px var(--shadow-card);
 }
 
 .preview figcaption {
@@ -420,8 +477,8 @@ body {
 }
 
 .cleanup-btn-locked {
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px dashed rgba(26, 22, 18, 0.25);
+  background: var(--paper-elev);
+  border: 1px dashed var(--ink-ghost);
   cursor: not-allowed;
 }
 

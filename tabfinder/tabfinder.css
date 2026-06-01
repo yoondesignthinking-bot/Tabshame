@@ -10,6 +10,13 @@
   --ink-ghost: rgba(26, 22, 18, 0.1);
   --paper: #f4ede0;
   --paper-warm: #ede4d3;
+  --paper-elev: rgba(255, 255, 255, 0.6);
+  --paper-elev-hover: rgba(255, 255, 255, 0.95);
+  --paper-elev-soft: rgba(255, 255, 255, 0.5);
+  --topbar-bg: rgba(244, 237, 224, 0.96);
+  --footer-bg: rgba(244, 237, 224, 0.94);
+  --kbd-bg: rgba(26, 22, 18, 0.08);
+  --close-bg: rgba(26, 22, 18, 0.06);
   --peach: #ff8966;
   --lavender: #b8a4ff;
   --shame: #e63946;
@@ -18,6 +25,27 @@
   --font-italic: "Instrument Serif", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #f0e6d4;
+    --ink-soft: rgba(240, 230, 212, 0.7);
+    --ink-faint: rgba(240, 230, 212, 0.42);
+    --ink-ghost: rgba(240, 230, 212, 0.14);
+    --paper: #1c1612;
+    --paper-warm: #221c17;
+    --paper-elev: rgba(255, 255, 255, 0.06);
+    --paper-elev-hover: rgba(255, 255, 255, 0.11);
+    --paper-elev-soft: rgba(255, 255, 255, 0.04);
+    --topbar-bg: rgba(28, 22, 18, 0.94);
+    --footer-bg: rgba(28, 22, 18, 0.94);
+    --kbd-bg: rgba(255, 255, 255, 0.08);
+    --close-bg: rgba(255, 255, 255, 0.06);
+    --peach: #ff9a7a;
+    --lavender: #c2b1ff;
+    --shame: #f06876;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -44,7 +72,7 @@ html, body {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(244, 237, 224, 0.96);
+  background: var(--topbar-bg);
   backdrop-filter: saturate(180%) blur(14px);
   -webkit-backdrop-filter: saturate(180%) blur(14px);
   border-bottom: 1px solid var(--ink-ghost);
@@ -92,7 +120,7 @@ html, body {
 }
 .search-input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--paper-elev);
   border: 1px solid var(--ink-ghost);
   border-radius: 14px;
   padding: 14px 48px 14px 50px;
@@ -115,7 +143,7 @@ html, body {
   right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(26, 22, 18, 0.08);
+  background: var(--kbd-bg);
   border: none;
   border-radius: 50%;
   width: 26px;
@@ -149,13 +177,13 @@ html, body {
   padding: 4px 10px;
   border-radius: 999px;
   border: 1px solid var(--ink-ghost);
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--paper-elev-soft);
   color: var(--ink-soft);
   cursor: pointer;
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 .filter-chip:hover {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--paper-elev-hover);
   color: var(--ink);
 }
 .filter-chip.is-active {
@@ -210,7 +238,7 @@ html, body {
   align-items: flex-start;
   gap: 12px;
   padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--paper-elev);
   border: 1px solid var(--ink-ghost);
   border-radius: 12px;
   cursor: pointer;
@@ -219,9 +247,9 @@ html, body {
   min-height: 76px;
 }
 .tab-tile:hover {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--paper-elev-hover);
   border-color: rgba(26, 22, 18, 0.2);
-  box-shadow: 0 6px 18px rgba(26, 22, 18, 0.08);
+  box-shadow: 0 6px 18px var(--kbd-bg);
 }
 .tab-tile:focus-visible,
 .tab-tile.is-focused {
@@ -296,7 +324,7 @@ html, body {
   letter-spacing: 0.06em;
   padding: 1px 6px;
   border-radius: 999px;
-  background: rgba(26, 22, 18, 0.07);
+  background: var(--close-bg);
   color: var(--ink-soft);
   flex-shrink: 0;
 }
@@ -307,7 +335,7 @@ html, body {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: rgba(26, 22, 18, 0.06);
+  background: var(--close-bg);
   border: none;
   border-radius: 50%;
   width: 22px;
@@ -365,7 +393,7 @@ html, body {
   font-weight: 500;
   letter-spacing: 0.08em;
   color: var(--ink-faint);
-  background: rgba(244, 237, 224, 0.94);
+  background: var(--footer-bg);
   backdrop-filter: saturate(180%) blur(10px);
   -webkit-backdrop-filter: saturate(180%) blur(10px);
   border-top: 1px solid var(--ink-ghost);
@@ -373,7 +401,7 @@ html, body {
 .footerbar kbd {
   font-family: var(--font-mono);
   font-size: 10px;
-  background: rgba(26, 22, 18, 0.08);
+  background: var(--kbd-bg);
   border: 1px solid var(--ink-ghost);
   border-bottom-width: 2px;
   border-radius: 4px;

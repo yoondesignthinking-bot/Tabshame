@@ -11,16 +11,9 @@
   const els = {
     body: document.querySelector("body"),
     card: document.querySelector(".card"),
-    unlockBanner: document.getElementById("unlockBanner"),
-    unlockEmoji: document.getElementById("unlockEmoji"),
-    unlockTitle: document.getElementById("unlockTitle"),
-    unlockName: document.getElementById("unlockName"),
     tabCount: document.getElementById("tabCount"),
     tabsLabel: document.getElementById("tabsLabel"),
-    heroSkipped: document.getElementById("heroSkipped"),
     scoreBand: document.getElementById("scoreBand"),
-    scoreStrong: document.getElementById("scoreStrong"),
-    scoreFormula: document.getElementById("scoreFormula"),
     archetypeName: document.getElementById("archetypeName"),
     archetypeEmoji: document.getElementById("archetypeEmoji"),
     archetypeDesc: document.getElementById("archetypeDesc"),
@@ -48,10 +41,10 @@
       const report = await getReport();
       currentReport = report;
       render(report);
-      // Banner check is non-blocking — popup paints first, banner appears
-      // a frame later. Guarantees the popup is responsive even if storage
-      // is slow.
-      checkUnlockBanner();
+      // Still drain the pending-transition record on every popup open so
+      // the toolbar badge clears, even though we no longer render the
+      // banner UI. Keeps the worker's "seen" bookkeeping accurate.
+      drainPendingTransition();
     } catch (e) {
       renderError(e);
     } finally {
@@ -73,12 +66,32 @@
     els.downloadCard.addEventListener("click", async () => {
       if (!currentReport) return;
       els.downloadCard.disabled = true;
-      els.downloadCard.textContent = "Rendering…";
+      const totalFormats = Object.keys(T.cardRenderer.FORMATS).length;
+      els.downloadCard.textContent = `Rendering 1/${totalFormats}…`;
       try {
-        await T.cardRenderer.downloadCard(currentReport, "twitter");
+        const { downloaded, failed } = await T.cardRenderer.downloadAllCards(
+          currentReport,
+          {
+            onProgress: ({ done, total }) => {
+              if (done < total) {
+                els.downloadCard.textContent = `Rendering ${done + 1}/${total}…`;
+              } else {
+                els.downloadCard.textContent = `Downloaded ${done} ✓`;
+              }
+            }
+          }
+        );
+        if (failed.length > 0) {
+          els.downloadCard.textContent = `Downloaded ${downloaded.length}, ${failed.length} failed`;
+        }
+      } catch (_e) {
+        els.downloadCard.textContent = "Render failed";
       } finally {
-        els.downloadCard.disabled = false;
-        els.downloadCard.textContent = "Generate share card";
+        // Brief success flash, then restore the original label.
+        setTimeout(() => {
+          els.downloadCard.disabled = false;
+          els.downloadCard.textContent = "Generate share cards";
+        }, 1400);
       }
     });
 
@@ -265,29 +278,15 @@
     });
   }
 
-  // Pull the pending transition. The worker returns it only on the FIRST
-  // read after the transition fired; subsequent reads return null. So if
-  // we receive a transition object, it's safe to render the banner.
-  async function checkUnlockBanner() {
-    let res;
+  // Drain the worker's "pending transition" record on every popup open so
+  // the toolbar badge clears even though we no longer render an unlock
+  // banner. The worker exposes a read-once message — first read returns
+  // the transition, subsequent reads return null. Nothing to display, so
+  // we just fire-and-forget and ignore the response.
+  async function drainPendingTransition() {
     try {
-      res = await sendMessage({ type: "GET_AND_CLEAR_PENDING_TRANSITION" });
-    } catch (_e) {
-      return;
-    }
-    const t = res && res.transition;
-    if (!t) return;
-    els.unlockEmoji.textContent = t.toEmoji || "🎉";
-    els.unlockName.textContent = t.toName || "A specific archetype";
-    // "earn" = first time crossing into any specific persona from casual.
-    // "shift" = moving between specific personas (the more-tabs-wins
-    // override or a tab-pattern change). Use different copy so users
-    // understand it's a change, not a first-time unlock.
-    const kind = t.kind || (t.from === "casual_hoarder" ? "earn" : "shift");
-    els.unlockTitle.textContent = kind === "shift"
-      ? "Your archetype just changed"
-      : "You've earned your archetype";
-    els.unlockBanner.hidden = false;
+      await sendMessage({ type: "GET_AND_CLEAR_PENDING_TRANSITION" });
+    } catch (_e) { /* non-fatal */ }
   }
 
   function updateActionStates() {
@@ -313,19 +312,10 @@
     const tabCount = report.stats.tabCount;
     els.tabCount.textContent = String(tabCount);
     els.tabsLabel.textContent = tabCount === 1 ? "TAB OPEN" : "TABS OPEN";
-    // Surface the gap between Chrome's actual tab count and the diagnosis
-    // count. Hidden when skipped == 0 (no gap to explain).
-    const skipped = report.stats.skippedCount || 0;
-    if (skipped > 0) {
-      els.heroSkipped.textContent =
-        `+${skipped} skipped · Chrome / extension page${skipped === 1 ? "" : "s"}`;
-      els.heroSkipped.hidden = false;
-    } else {
-      els.heroSkipped.hidden = true;
-    }
+    // Band label is the "reading the room…" tone line; it's qualitative
+    // (e.g. "ambitious", "feral") and lives on the popup as personality
+    // even though the underlying score number is no longer shown.
     els.scoreBand.textContent = report.band.label;
-    els.scoreStrong.textContent = `SHAME SCORE ${report.score}`;
-    els.scoreFormula.textContent = report.breakdown.formula;
     els.archetypeName.textContent = report.archetype.name;
     els.archetypeEmoji.textContent = report.archetype.emoji;
     els.archetypeDesc.textContent = report.archetype.description;
@@ -348,8 +338,6 @@
     els.tabCount.textContent = "—";
     els.tabsLabel.textContent = "TABS OPEN";
     els.scoreBand.textContent = "Couldn't read tabs.";
-    els.scoreStrong.textContent = "SHAME SCORE —";
-    els.scoreFormula.textContent = "";
     els.archetypeName.textContent = "Diagnosis unavailable";
     els.archetypeDesc.textContent =
       "TabShame couldn't reach the service worker. Try reloading the extension at chrome://extensions.";

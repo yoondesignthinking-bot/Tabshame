@@ -13,26 +13,12 @@
         <span class="hdr-date" id="dateLabel"></span>
       </header>
 
-      <div class="unlock-banner" id="unlockBanner" hidden>
-        <span class="unlock-emoji" id="unlockEmoji">🎉</span>
-        <div class="unlock-text">
-          <div class="unlock-title" id="unlockTitle">You've earned your archetype</div>
-          <div class="unlock-name" id="unlockName">…</div>
-        </div>
-      </div>
-
       <section class="hero-block">
         <div class="hero-count" id="tabCount">--</div>
         <div class="hero-meta">
           <div class="hero-label" id="tabsLabel">TABS OPEN</div>
-          <div class="hero-skipped" id="heroSkipped" hidden></div>
           <div class="hero-band" id="scoreBand">reading the room…</div>
         </div>
-      </section>
-
-      <section class="score-line">
-        <span class="score-strong" id="scoreStrong">SHAME SCORE —</span>
-        <span class="score-formula" id="scoreFormula">…</span>
       </section>
 
       <section class="archetype">
@@ -44,7 +30,7 @@
       </section>
 
       <section class="stats">
-        <div class="tile" title="Tabs that share an exact URL with another open tab. Closing them keeps one of each.">
+        <div class="tile" title="Same-site tabs you can collapse to one. Two LinkedIn tabs on different pages still count — one site, one tab. Pinned tabs are always preserved.">
           <div class="tile-value" id="tileDupes">–</div>
           <div class="tile-label">EXTRA TABS · CLOSEABLE</div>
         </div>
@@ -61,7 +47,7 @@
 
       <section class="actions">
         <button class="btn btn-primary" id="openReport">Open full report</button>
-        <button class="btn btn-secondary" id="downloadCard">Generate share card</button>
+        <button class="btn btn-secondary" id="downloadCard" title="Downloads X / Threads (16:9), Instagram feed (4:5), and Stories (9:16)">Generate share cards</button>
         <button class="btn btn-action" id="openTabFinder" title="Open full tab finder (Cmd+Shift+F)">
           Find a tab · all open tabs in one grid
         </button>
