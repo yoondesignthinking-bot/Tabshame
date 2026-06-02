@@ -431,7 +431,6 @@ async function notifyArchetypeTransition(report) {
   // the user is no longer "in" a specific persona. (Demotions are silent.)
   if (current === "casual_hoarder" && last && last !== "casual_hoarder") {
     clearTransitionBadge();
-    console.log(`[TabShame] transition demote: ${last} → casual_hoarder`);
     return { fired: false, reason: "to_casual", last, current };
   }
 
@@ -484,7 +483,6 @@ async function notifyArchetypeTransition(report) {
     } catch (e) {
       console.warn("[TabShame] notification create failed:", e);
     }
-    console.log(`[TabShame] transition EARN fired: ${last} → ${current}`);
   } else {
     // Quiet specific → specific shift. No OS notification (would be spam
     // as users tip between personas). Update badge to a subtle dot so the
@@ -496,7 +494,6 @@ async function notifyArchetypeTransition(report) {
     } catch (e) {
       console.warn("[TabShame] badge update failed:", e);
     }
-    console.log(`[TabShame] transition SHIFT (silent): ${last} → ${current}`);
   }
 
   return { fired: true, kind, last, current };
@@ -863,8 +860,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg && msg.type === "DEBUG_RUN_TRANSITION_CHECK") {
     // Debug hook — bypasses the alarm so you can verify the path from
-    // the service-worker DevTools console. Run:
-    //   chrome.runtime.sendMessage({ type: "DEBUG_RUN_TRANSITION_CHECK" }, console.log);
+    // the service-worker DevTools by sending the DEBUG_RUN_TRANSITION_CHECK
+    // message to the runtime. No-op for normal users; reaching this
+    // requires opening the SW DevTools and crafting the message manually.
     buildLiveReport()
       .then((report) => sendResponse({ ok: true, archetypeId: report.archetype.id }))
       .catch((err) => sendResponse({ ok: false, error: String(err) }));

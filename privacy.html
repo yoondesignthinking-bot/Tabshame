@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy · TabShame</title>
+    <meta
+      name="description"
+      content="TabShame does not collect, store, transmit, or sell any user data. Everything runs locally on your device."
+    />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* Privacy is a content page — center a single column, generous
+         line-height, ditch the home-page hero scaffolding. */
+      .privacy-shell {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 96px 28px 120px;
+      }
+      .privacy-shell h1 {
+        font-family: var(--font-serif, "Fraunces", Georgia, serif);
+        font-weight: 900;
+        font-size: clamp(40px, 5vw, 64px);
+        line-height: 1.05;
+        margin: 0 0 8px;
+      }
+      .privacy-meta {
+        font-family: var(--font-mono, "JetBrains Mono", monospace);
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(0, 0, 0, 0.55);
+        margin-bottom: 56px;
+      }
+      .privacy-shell h2 {
+        font-family: var(--font-serif, "Fraunces", Georgia, serif);
+        font-weight: 700;
+        font-size: clamp(22px, 2.5vw, 28px);
+        margin: 48px 0 12px;
+      }
+      .privacy-shell p,
+      .privacy-shell li {
+        font-size: 17px;
+        line-height: 1.65;
+        color: #1a1612;
+      }
+      .privacy-shell ul {
+        padding-left: 22px;
+      }
+      .privacy-shell ul li {
+        margin-bottom: 8px;
+      }
+      .privacy-shell strong {
+        font-weight: 600;
+      }
+      .privacy-shell code {
+        font-family: var(--font-mono, "JetBrains Mono", monospace);
+        font-size: 14px;
+        background: rgba(0, 0, 0, 0.05);
+        padding: 1px 6px;
+        border-radius: 4px;
+      }
+      .privacy-footer {
+        margin-top: 80px;
+        padding-top: 28px;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        font-family: var(--font-mono, "JetBrains Mono", monospace);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(0, 0, 0, 0.55);
+      }
+      .privacy-footer a {
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="privacy-shell">
+      <h1>Privacy Policy</h1>
+      <div class="privacy-meta">Last updated: June 2, 2026</div>
+
+      <p>
+        <strong
+          >TabShame does not collect, store, transmit, or sell any user
+          data.</strong
+        >
+      </p>
+
+      <p>Every operation in this extension runs locally on your device:</p>
+
+      <ul>
+        <li>
+          <strong>Tab metadata</strong> (URLs, titles, count, age) is read
+          locally via Chrome's <code>chrome.tabs</code> API and used only to
+          compute your archetype.
+        </li>
+        <li>
+          <strong>Your archetype</strong> is calculated locally by JavaScript
+          bundled inside the extension. The decision tree never leaves your
+          browser.
+        </li>
+        <li>
+          <strong>Share cards</strong> (PNG images) are rendered locally with
+          the Canvas API and downloaded directly to your device.
+        </li>
+        <li>
+          <strong>Settings and snapshots</strong> are stored in
+          <code>chrome.storage.local</code>, which lives on your device and is
+          never synced to any server we control.
+        </li>
+      </ul>
+
+      <p>
+        We use <strong>no analytics, no tracking pixels, no cookies, no
+        remote servers, no third-party SDKs</strong>. There is no telemetry,
+        no usage reporting, no crash collector, no advertising network.
+      </p>
+
+      <h2>What we don't see</h2>
+      <ul>
+        <li>We don't see the URLs of your tabs.</li>
+        <li>We don't see the contents of any web page.</li>
+        <li>We don't see your browsing history, bookmarks, downloads, or saved passwords.</li>
+        <li>
+          We don't see your IP address — the extension makes no outbound
+          network requests of any kind.
+        </li>
+      </ul>
+
+      <h2>Optional permissions</h2>
+      <p>
+        TabShame ships with two optional permissions (<code>topSites</code>,
+        <code>bookmarks</code>) that you can grant or revoke at any time from
+        the new-tab page or <code>chrome://extensions</code>. They are
+        <strong>opt-in only</strong> — never auto-granted. When granted, the
+        corresponding data (most-visited sites; bookmark bar) is read locally
+        and rendered as shortcut tiles on the new tab page. It is never read
+        by, transmitted to, or stored anywhere outside your browser.
+      </p>
+
+      <h2>Data retention</h2>
+      <p>TabShame keeps a small amount of state in <code>chrome.storage.local</code>:</p>
+      <ul>
+        <li>The current tab archetype (a short string id).</li>
+        <li>
+          A rolling per-day snapshot of your tab count, archetype, and
+          duplicate count — used to power future "year-in-review" features.
+        </li>
+        <li>Your preferences (auto-group toggle, new-tab mode).</li>
+      </ul>
+      <p>
+        You can wipe this entirely at any time by removing TabShame from
+        <code>chrome://extensions</code>, which deletes all extension storage.
+      </p>
+
+      <h2>Third-party code</h2>
+      <p>
+        TabShame includes no third-party JavaScript libraries, frameworks, or
+        SDKs at runtime. The CSS optionally references three Google Fonts
+        (Fraunces, Instrument Serif, JetBrains Mono) by name with system-font
+        fallbacks. The font files themselves are <strong>not bundled</strong>
+        and are <strong>not downloaded</strong> at runtime — only system
+        fonts ship with the extension.
+      </p>
+
+      <h2>Children</h2>
+      <p>
+        TabShame is not directed at children under 13 and does not knowingly
+        collect data from any user — adult or child — because it does not
+        collect data from anyone.
+      </p>
+
+      <h2>Changes to this policy</h2>
+      <p>
+        If the policy ever changes, the "Last updated" date at the top will
+        reflect the change. Material changes (e.g. if any data ever started
+        leaving your device) would be announced in the extension's update
+        description so you can review before updating.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        <a href="mailto:hello@tabshame.app">hello@tabshame.app</a>
+      </p>
+
+      <div class="privacy-footer">
+        <a href="/">← TabShame</a>
+      </div>
+    </main>
+  </body>
+</html>

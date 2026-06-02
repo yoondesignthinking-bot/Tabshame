@@ -56,15 +56,5 @@
       },
       "description": "Find a tab — open the TabShame tab finder"
     }
-  },
-
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "report/report.html",
-        "assets/fonts/*"
-      ],
-      "matches": ["<all_urls>"]
-    }
-  ]
+  }
 }
