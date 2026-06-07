@@ -71,4 +71,4 @@ description so you can review before updating.
 
 ## Contact
 
-hello@tabshame.app
+nysgbuilderbros@gmail.com
