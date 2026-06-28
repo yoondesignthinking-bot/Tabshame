@@ -166,24 +166,35 @@ body {
   margin-bottom: 14px;
 }
 
+/* Stacked vertical layout — emoji above the name.
+   The previous inline-flex row left the emoji floating awkwardly to
+   the left of multi-line titles like "The Bagholder in Denial" or
+   "The Stack Overflow Necromancer" because align-items: center
+   vertically centered the emoji against the entire wrapped block.
+   Stacking guarantees a clean centered composition at any title length. */
 .reveal-row {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
   margin-bottom: 14px;
 }
 
 .reveal-emoji {
-  font-size: 56px;
+  font-size: 64px;
   line-height: 1;
+  display: block;
 }
 
 .reveal-name {
   font-family: var(--font-serif);
   font-weight: 900;
   font-size: clamp(40px, 6vw, 72px);
+  line-height: 1.05;
   margin: 0;
   letter-spacing: -0.02em;
+  text-align: center;
+  max-width: 16ch;
 }
 
 .reveal-desc {
