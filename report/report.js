@@ -30,8 +30,9 @@
     previewTwitter: document.getElementById("previewTwitter"),
     previewInstagram: document.getElementById("previewInstagram"),
     previewStory: document.getElementById("previewStory"),
-    closeDupesReport: document.getElementById("closeDupesReport"),
-    closeDupesReportSub: document.getElementById("closeDupesReportSub")
+    shareToX: document.getElementById("shareToX"),
+    shareToInstagram: document.getElementById("shareToInstagram"),
+    shareDirectNote: document.getElementById("shareDirectNote")
   };
 
   let currentReport = null;
@@ -55,7 +56,7 @@
     renderDomains(report);
     renderPreviews(report);
     wireDownloads();
-    wireCleanup();
+    wireDirectShare();
   }
 
   function sendMessage(msg) {
@@ -155,7 +156,6 @@
       renderTiles(fresh);
       renderDomains(fresh);
       await renderPreviews(fresh);
-      updateCleanupState();
       // Brief flash so the user sees something landed even if the row
       // disappears from the list immediately.
       if (closed === 0) {
@@ -221,44 +221,72 @@
     });
   }
 
-  function wireCleanup() {
-    updateCleanupState();
-    els.closeDupesReport.addEventListener("click", async () => {
-      if (!currentReport || currentReport.stats.duplicateCount === 0) return;
-      els.closeDupesReport.disabled = true;
-      const originalSub = els.closeDupesReportSub.textContent;
-      els.closeDupesReportSub.textContent = "Closing…";
-      try {
-        const res = await sendMessage({ type: "CLOSE_DUPLICATES" });
-        const closed = (res && res.closed) || 0;
-        els.closeDupesReportSub.textContent = `Closed ${closed} extra${closed === 1 ? "" : "s"} ✓`;
-        const fresh = await getReport();
-        currentReport = fresh;
-        renderHero(fresh);
-        renderTiles(fresh);
-        renderDomains(fresh);
-        await renderPreviews(fresh);
-        setTimeout(() => {
-          els.closeDupesReportSub.textContent = originalSub;
-          updateCleanupState();
-        }, 1600);
-      } catch (e) {
-        els.closeDupesReportSub.textContent = "Couldn't close (try again)";
-        setTimeout(() => {
-          els.closeDupesReportSub.textContent = originalSub;
-          updateCleanupState();
-        }, 1800);
-      }
-    });
+  // Direct share — the two big CTAs above the per-format download grid.
+  //
+  // X (Twitter): opens a compose-intent URL in a new tab pre-filled with
+  // the diagnosis text. X's intent API does NOT support attaching
+  // images, so we trigger a download of the X-sized card first (the
+  // user can attach it manually in the compose tab).
+  //
+  // Instagram: there is no compose intent on the web at all — Instagram
+  // is a mobile-app-first surface. The realistic flow is "download the
+  // Stories card → user shares from Photos". We download the 1080×1920
+  // story card and flash a short note in the share-direct-note line.
+  function wireDirectShare() {
+    if (els.shareToX) {
+      els.shareToX.addEventListener("click", async () => {
+        if (!currentReport) return;
+        const original = els.shareToX.querySelector("span").textContent;
+        els.shareToX.disabled = true;
+        els.shareToX.querySelector("span").textContent = "Preparing…";
+        try {
+          await T.cardRenderer.downloadCard(currentReport, "twitter");
+          const url = buildXComposeUrl(currentReport);
+          chrome.tabs.create({ url });
+          els.shareToX.querySelector("span").textContent = "Opened ✓";
+        } catch (_e) {
+          els.shareToX.querySelector("span").textContent = "Try again";
+        } finally {
+          setTimeout(() => {
+            els.shareToX.disabled = false;
+            els.shareToX.querySelector("span").textContent = original;
+          }, 1600);
+        }
+      });
+    }
+
+    if (els.shareToInstagram) {
+      els.shareToInstagram.addEventListener("click", async () => {
+        if (!currentReport) return;
+        const labelEl = els.shareToInstagram.querySelector("span");
+        const original = labelEl.textContent;
+        els.shareToInstagram.disabled = true;
+        labelEl.textContent = "Rendering…";
+        try {
+          await T.cardRenderer.downloadCard(currentReport, "story");
+          labelEl.textContent = "Saved ✓ paste in Stories";
+        } catch (_e) {
+          labelEl.textContent = "Try again";
+        } finally {
+          setTimeout(() => {
+            els.shareToInstagram.disabled = false;
+            labelEl.textContent = original;
+          }, 2200);
+        }
+      });
+    }
   }
 
-  function updateCleanupState() {
-    if (!currentReport) return;
-    const hasDupes = currentReport.stats.duplicateCount > 0;
-    els.closeDupesReport.disabled = !hasDupes;
-    els.closeDupesReport.title = hasDupes
-      ? `Close ${currentReport.stats.duplicateCount} same-site tab(s) — keeps one per site`
-      : "Nothing to close — every open tab is from a different site";
+  // Build the X compose-intent URL. We keep this short and unannotated
+  // — X strips long URLs aggressively and we're not attaching an image
+  // (no intent API for that), so a concise text payload reads best.
+  function buildXComposeUrl(report) {
+    const arch = report.archetype.name;
+    const tabs = report.stats.tabCount;
+    const text =
+      `${tabs} tabs open. TabShame just diagnosed me as ${arch} ${report.archetype.emoji}` +
+      `\n\nGet your own: tabshame.app`;
+    return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────

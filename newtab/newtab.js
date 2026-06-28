@@ -21,16 +21,11 @@
     dateLabel: document.getElementById("dateLabel"),
     archetypeEmoji: document.getElementById("archetypeEmoji"),
     archetypeName: document.getElementById("archetypeName"),
-    tabCount: document.getElementById("tabCount"),
     roastLine: document.getElementById("roastLine"),
-    downloadCard: document.getElementById("downloadCard"),
     openTabFinder: document.getElementById("openTabFinder"),
     closeDupes: document.getElementById("closeDupes"),
     closeDupesLabel: document.getElementById("closeDupesLabel"),
-    openReport: document.getElementById("openReport"),
-    // Footer toggle — flips between full and lite mode. Label rewritten
-    // by updateModeToggleLabel() to reflect current state.
-    switchToLite: document.getElementById("switchToLite")
+    openReport: document.getElementById("openReport")
   };
 
   let currentReport = null;
@@ -39,7 +34,9 @@
   let storedNewTabMode = "full";
 
   async function init() {
-    els.dateLabel.textContent = formatDate(new Date()).toUpperCase();
+    if (els.dateLabel) {
+      els.dateLabel.textContent = formatDate(new Date()).toUpperCase();
+    }
 
     // 1. Read stored preference + last archetype together, so the very first
     //    paint reflects the user's actual state. Two storage hits in parallel.
@@ -106,8 +103,6 @@
   function setBodyMode(mode) {
     els.body.classList.remove("mode-full", "mode-lite");
     els.body.classList.add(mode === "lite" ? "mode-lite" : "mode-full");
-    // Keep the footer toggle label in sync.
-    updateModeToggleLabel();
   }
 
   // Paint skeleton from cached storage — uses the last-known archetype and
@@ -115,14 +110,11 @@
   // on the worker. If storage is empty (fresh install), the placeholders
   // already on the page stay until the real report arrives.
   async function primeFromCache(lastArchetypeId) {
-    const tabsMap = await T.storage.getAllTabs();
     const archetypes = T.ARCHETYPES || [];
     const archetype =
       archetypes.find((a) => a.archetypeId === lastArchetypeId) ||
       archetypes.find((a) => a.archetypeId === "casual_hoarder");
     if (!archetype) return;
-
-    const cachedTabCount = Object.keys(tabsMap || {}).length;
 
     // Don't overwrite if the live report has already painted (race vs. fast
     // worker reply). Check aria-busy as a proxy.
@@ -130,7 +122,6 @@
 
     els.archetypeEmoji.textContent = archetype.emoji;
     els.archetypeName.textContent = archetype.name;
-    els.tabCount.textContent = String(cachedTabCount);
   }
 
   function render(report) {
@@ -139,7 +130,7 @@
 
     els.archetypeEmoji.textContent = archetype.emoji;
     els.archetypeName.textContent = archetype.name;
-    els.tabCount.textContent = String(report.stats.tabCount);
+    // Replace the skeleton-line scaffolding with the real roast text.
     els.roastLine.textContent = `"${report.roast}"`;
 
     updateActionStates();
@@ -157,7 +148,6 @@
   function renderError(e) {
     els.archetypeName.textContent = "Diagnosis unavailable";
     els.archetypeEmoji.textContent = "🐌";
-    els.tabCount.textContent = "—";
     els.roastLine.textContent = `"${String(e && e.message ? e.message : e)}"`;
   }
 
@@ -188,38 +178,6 @@
       });
     }
 
-    els.downloadCard.addEventListener("click", async () => {
-      if (!currentReport) return;
-      const original = els.downloadCard.textContent;
-      els.downloadCard.disabled = true;
-      const totalFormats = Object.keys(T.cardRenderer.FORMATS).length;
-      els.downloadCard.textContent = `Rendering 1/${totalFormats}…`;
-      try {
-        const { downloaded, failed } = await T.cardRenderer.downloadAllCards(
-          currentReport,
-          {
-            onProgress: ({ done, total }) => {
-              if (done < total) {
-                els.downloadCard.textContent = `Rendering ${done + 1}/${total}…`;
-              } else {
-                els.downloadCard.textContent = `Downloaded ${done} ✓`;
-              }
-            }
-          }
-        );
-        if (failed.length > 0) {
-          els.downloadCard.textContent = `Downloaded ${downloaded.length}, ${failed.length} failed`;
-        }
-      } catch (_e) {
-        els.downloadCard.textContent = "Render failed";
-      } finally {
-        setTimeout(() => {
-          els.downloadCard.disabled = false;
-          els.downloadCard.textContent = original;
-        }, 1400);
-      }
-    });
-
     els.closeDupes.addEventListener("click", async () => {
       if (!currentReport || currentReport.stats.duplicateCount === 0) return;
       const original = els.closeDupesLabel.textContent;
@@ -245,27 +203,9 @@
       }
     });
 
-    // Footer link toggles between full and lite. Label is rewritten by
-    // updateModeToggleLabel() to reflect the current state. Only rendered
-    // in non-casual modes (.casual hides the .stage footer entirely).
-    els.switchToLite.addEventListener("click", async () => {
-      const next = els.body.classList.contains("mode-lite") ? "full" : "lite";
-      storedNewTabMode = next;
-      await T.storage.updateSettings({ newTabMode: next });
-      setBodyMode(next);
-      updateModeToggleLabel();
-    });
-    updateModeToggleLabel();
-  }
-
-  function updateModeToggleLabel() {
-    if (!els.switchToLite) return;
-    const isLite = els.body.classList.contains("mode-lite");
-    // Verb-led labels — tells the user what clicking does, not just
-    // a mode name they have to translate.
-    els.switchToLite.textContent = isLite
-      ? "show persona first"
-      : "show shortcuts first";
+    // (The footer mode-toggle was removed in the Jun 2026 redesign — the
+    // "show shortcuts first?" label was too cryptic, and the same setting
+    // is now available under Settings → "New-tab page" in the popup.)
   }
 
   // ─── shortcuts (Recent + Bookmark Bar) ───────────────────────────────

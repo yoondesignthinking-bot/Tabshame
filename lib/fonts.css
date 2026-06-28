@@ -1,0 +1,68 @@
+/*
+ * lib/fonts.css
+ *
+ * Shared @font-face declarations for every TabShame surface (popup,
+ * newtab, report, tabfinder). Imported via <link rel="stylesheet"> in
+ * each surface's HTML — keeping the rules in one place so a font tweak
+ * only has to happen once.
+ *
+ * Why this file exists:
+ *   • We DO NOT bundle Fraunces / Instrument Serif / JetBrains Mono as
+ *     woff2 files. The extension would be ~600 KB bigger and the woff2s
+ *     would have to be added to web_accessible_resources, which Chrome
+ *     reviewers flag.
+ *   • Instead we declare each face with `src: local(...)` so the browser
+ *     picks the font up if the user happens to have it installed
+ *     locally, but never makes a network request.
+ *   • `font-display: swap` means the browser paints with the system
+ *     fallback first (no FOIT) and swaps to the real face once it's
+ *     resolved — eliminating the blank-text flash.
+ *   • The `size-adjust` / `ascent-override` / `descent-override` /
+ *     `line-gap-override` metrics align the system fallback's glyph
+ *     box with the real face's, so when the swap fires the surrounding
+ *     layout doesn't reflow. The values below were measured against
+ *     Fraunces Black (weight 900) and JetBrains Mono Bold (weight 600)
+ *     vs. Georgia and Menlo respectively on macOS.
+ *
+ * If you ever DO bundle the woff2 files, swap each `local()` line for
+ * `url("../assets/fonts/Fraunces-Black.woff2") format("woff2")` and
+ * add the file to web_accessible_resources.
+ */
+
+@font-face {
+  font-family: "Fraunces";
+  src: local("Fraunces Black"), local("Fraunces-Black"), local("Fraunces");
+  font-weight: 700 900;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 102%;
+  ascent-override: 95%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Instrument Serif";
+  src: local("Instrument Serif"), local("InstrumentSerif-Regular"),
+       local("Instrument Serif Italic"), local("InstrumentSerif-Italic");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 99%;
+  ascent-override: 92%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: local("JetBrainsMono-SemiBold"), local("JetBrains Mono SemiBold"),
+       local("JetBrains Mono"), local("JetBrainsMono-Regular");
+  font-weight: 500 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 88%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}

@@ -99,34 +99,26 @@ body.mode-lite .persona-column {
   border-radius: 12px;
 }
 
-/* Compact persona elements in lite — quieter than full but still readable
-   at a glance. Sizes between full (60/64) and the earlier over-shrink
-   (36/28) — landed at 44/36 so the archetype name still feels like
-   a headline, just secondary. */
-body.mode-lite .persona-column .hero { margin-top: 0; gap: 6px; }
-body.mode-lite .hero-emoji { font-size: 44px; }
-body.mode-lite .hero-archetype { font-size: 36px; line-height: 0.95; }
-body.mode-lite .hero-eyebrow { font-size: 14px; }
-body.mode-lite .hero-stats { font-size: 12px; gap: 6px; }
-body.mode-lite .hero-count { font-size: 16px; }
-body.mode-lite .roast-block { margin-top: 10px; }
+/* Compact persona elements in lite — the archetype headline shrinks to a
+   secondary scale, the roast tightens up, and the three action buttons
+   collapse to a single "open report" link (Find a tab + Close extras
+   don't make sense on the shortcuts-first surface). */
+body.mode-lite .persona-column .hero { margin-top: 0; }
+body.mode-lite .hero-name { font-size: 30px; gap: 10px; }
+body.mode-lite .hero-emoji { font-size: 30px; }
+body.mode-lite .roast-block { margin-top: 12px; }
 body.mode-lite .roast-line {
-  font-size: 13px;
-  line-height: 1.4;
-  padding-left: 10px;
+  font-size: 14px;
+  line-height: 1.45;
+  padding: 4px 0 4px 12px;
+  border-left-width: 3px;
 }
 
-/* Lite-mode persona has ONE escape hatch (Open full report), not three
-   action buttons. Hide Share card + Close duplicates here; those CTAs
-   belong on the full-mode poster where persona is the focus, not on
-   the secondary card where they'd compete with the primary Add CTAs. */
-body.mode-lite #downloadCard,
+body.mode-lite #openTabFinder,
 body.mode-lite #closeDupes {
   display: none;
 }
 
-/* Open full report demotes to a small text link in lite — matches the
-   "remove" / "show more" mode-link aesthetic used elsewhere on the page. */
 body.mode-lite .actions { margin-top: 12px; }
 body.mode-lite #openReport {
   background: transparent;
@@ -220,114 +212,143 @@ body.mode-lite .shortcuts-column .shortcuts-stack { margin-top: 36px; }
 
 .topbar-date { text-transform: uppercase; }
 
-/* Hero block — the persona showcase. Generous margin-top from the
-   topbar so the persona reads as a separate visual group. Internal gap
-   widens the eyebrow → name → stats rhythm. */
+/* Hero — single-line roast title: emoji + archetype name.
+   No eyebrow, no tab count (that moved to the popup hero). The new-tab
+   page's job is personality + recent sites, not displaying numbers. */
 .hero {
   margin-top: 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.hero-eyebrow {
-  font-family: var(--font-italic);
-  font-style: italic;
-  font-size: 22px;
-  color: var(--ink-soft);
-  line-height: 1;
 }
 
 .hero-name {
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
-  gap: 16px;
   flex-wrap: wrap;
-}
-
-.hero-emoji {
-  font-size: 60px;
-  line-height: 1;
-}
-
-.hero-archetype {
+  gap: 14px;
+  margin: 0;
   font-family: var(--font-serif);
   font-weight: 900;
-  font-size: 64px;
-  line-height: 0.92;
-  letter-spacing: -0.025em;
+  font-size: clamp(38px, 5vw, 56px);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
   color: var(--ink);
 }
 
-.hero-stats {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  font-family: var(--font-italic);
-  font-style: italic;
-  font-size: 20px;
-  color: var(--ink-soft);
-  margin-top: 4px;
+.hero-emoji {
+  font-size: clamp(40px, 5vw, 56px);
+  line-height: 1;
+  margin-right: 2px;
 }
 
-.hero-count {
-  font-family: var(--font-serif);
-  font-style: normal;
-  font-weight: 900;
-  font-size: 28px;
-  color: var(--shame);
-  font-variant-numeric: tabular-nums;
+.hero-archetype {
+  font-family: inherit;
+  font-weight: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
 }
 
-.hero-stats-divider { color: var(--ink-faint); }
-
-/* Roast — the quoted line under the hero */
+/* Pull-quote roast — the personality. Larger italic serif, generous
+   left padding off the peach border, plenty of breathing room. */
 .roast-block {
-  margin-top: 36px;
-  max-width: 620px;
+  margin-top: 28px;
+  max-width: 720px;
 }
 
 .roast-line {
   margin: 0;
   font-family: var(--font-italic);
   font-style: italic;
-  font-size: 19px;
+  font-size: clamp(20px, 2.2vw, 26px);
   line-height: 1.4;
   color: var(--ink);
-  padding-left: 14px;
-  border-left: 3px solid var(--peach);
+  padding: 8px 0 8px 18px;
+  border-left: 4px solid var(--peach);
 }
 
-/* Action row */
+/* Horizontal tertiary action row — three buttons in one line.
+   Every button is outlined; no filled CTAs compete on this page. */
 .actions {
   margin-top: 32px;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .btn {
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 12px 18px;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  padding: 10px 16px;
   border-radius: 8px;
-  border: none;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
   cursor: pointer;
-  transition: transform 0.06s ease, opacity 0.15s ease;
+  transition: transform 0.06s ease, opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
 .btn:active { transform: translateY(1px); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--ink-faint);
+  color: var(--ink-soft);
+}
 
-.btn-primary { background: var(--ink); color: var(--paper); }
-.btn-secondary { background: var(--lavender); color: var(--ink); }
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.btn-primary:hover { opacity: 0.92; }
+
+.btn-secondary,
 .btn-tertiary {
   background: transparent;
   color: var(--ink);
-  border: 1px solid rgba(26, 22, 18, 0.2);
+  border: 1px solid var(--ink);
+}
+
+.btn-secondary:hover,
+.btn-tertiary:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* Skeleton lines — three stacked stub bars during hydration. Replaces
+   the literal "…" and "--" placeholders that read as broken. */
+.skeleton-line {
+  display: block;
+  height: 1em;
+  margin: 0.35em 0;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--paper-elev-soft) 0%,
+    var(--paper-elev) 50%,
+    var(--paper-elev-soft) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-line-lg { height: 1.4em; width: 95%; }
+.skeleton-line { width: 88%; }
+.skeleton-line-sm { width: 62%; }
+
+@keyframes skeletonPulse {
+  0%, 100% { background-position: 0% 0; }
+  50% { background-position: -100% 0; }
+}
+
+/* Once hydrated, the JS replaces the skeleton spans with real text;
+   when the body removes aria-busy the skeleton pulse stops. */
+body:not([aria-busy="true"]) .skeleton-line {
+  animation: none;
 }
 
 /* Footer */
@@ -579,11 +600,11 @@ body.mode-lite .shortcuts-column .shortcuts-stack { margin-top: 36px; }
   padding-top: 12px;
 }
 
-/* Loading state — soft pulse for placeholder elements while hydrating. */
+/* Loading state — when the JS hasn't filled the real text yet, the emoji
+   placeholder fades slightly so the skeleton lines below are the visual
+   focus. Once aria-busy is removed, both go to full opacity. */
 body[aria-busy="true"] .hero-archetype,
-body[aria-busy="true"] .hero-emoji,
-body[aria-busy="true"] .hero-count,
-body[aria-busy="true"] .roast-line {
+body[aria-busy="true"] .hero-emoji {
   opacity: 0.5;
 }
 
@@ -592,9 +613,5 @@ body[aria-busy="true"] .roast-line {
 @media (max-width: 640px) {
   .stage { padding: 22px 20px; }
   .hero { margin-top: 4vh; }
-  .hero-emoji { font-size: 52px; }
-  .hero-archetype { font-size: 52px; }
-  .hero-eyebrow { font-size: 18px; }
-  .roast-line { font-size: 18px; }
   .stage-footer { flex-direction: column; align-items: flex-start; }
 }

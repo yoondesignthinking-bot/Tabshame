@@ -3,6 +3,13 @@
  *
  * Wires the toolbar popup to the engines. Asks the service worker for a
  * fresh report (which reconciles tabs first), renders, hooks up actions.
+ *
+ * Two views are mounted in the same DOM:
+ *   - data-view="main"      — diagnosis hero + extras block + 2 actions
+ *   - data-view="settings"  — auto-group toggle, close-persona-groups,
+ *                              new-tab mode, recent/bookmark permissions
+ * Switching is in-popup (no nav). Settings is reached via the gear icon
+ * in the main view's header.
  */
 
 (function () {
@@ -11,6 +18,11 @@
   const els = {
     body: document.querySelector("body"),
     card: document.querySelector(".card"),
+    // main view
+    mainView: document.querySelector('[data-view="main"]'),
+    settingsView: document.querySelector('[data-view="settings"]'),
+    openSettings: document.getElementById("openSettings"),
+    closeSettings: document.getElementById("closeSettings"),
     tabCount: document.getElementById("tabCount"),
     tabsLabel: document.getElementById("tabsLabel"),
     scoreBand: document.getElementById("scoreBand"),
@@ -21,29 +33,28 @@
     tileHaunt: document.getElementById("tileHaunt"),
     tileHauntCount: document.getElementById("tileHauntCount"),
     roast: document.getElementById("roast"),
-    dateLabel: document.getElementById("dateLabel"),
     openReport: document.getElementById("openReport"),
-    downloadCard: document.getElementById("downloadCard"),
     closeDupes: document.getElementById("closeDupes"),
     closeDupesLabel: document.getElementById("closeDupesLabel"),
     openTabFinder: document.getElementById("openTabFinder"),
-    upgrade: document.getElementById("upgrade"),
+    // settings view
     autoGroupToggle: document.getElementById("autoGroupToggle"),
-    newTabModeSelect: document.getElementById("newTabModeSelect")
+    newTabModeSelect: document.getElementById("newTabModeSelect"),
+    closePersonaGroups: document.getElementById("closePersonaGroups"),
+    closeGroupsSub: document.getElementById("closeGroupsSub")
   };
 
   let currentReport = null;
 
   async function init() {
-    els.dateLabel.textContent = formatDate(new Date()).toUpperCase();
-
     try {
       const report = await getReport();
       currentReport = report;
       render(report);
       // Still drain the pending-transition record on every popup open so
-      // the toolbar badge clears, even though we no longer render the
-      // banner UI. Keeps the worker's "seen" bookkeeping accurate.
+      // the worker's "seen" bookkeeping stays accurate. The transition
+      // banner UI was removed in Jun 2026, but the in-app diagnosis
+      // change is still surfaced via the freshly-rendered persona.
       drainPendingTransition();
     } catch (e) {
       renderError(e);
@@ -56,47 +67,16 @@
       window.close();
     });
 
-    // Open the full-bleed tab finder in a new tab. Closes the popup so
-    // the user doesn't see a tiny popup behind their new finder tab.
+    // Find-a-tab opens in a new tab — closes the popup so the user
+    // doesn't see a tiny floating popup behind the new finder.
     els.openTabFinder.addEventListener("click", () => {
       chrome.tabs.create({ url: chrome.runtime.getURL("tabfinder/tabfinder.html") });
       window.close();
     });
 
-    els.downloadCard.addEventListener("click", async () => {
-      if (!currentReport) return;
-      els.downloadCard.disabled = true;
-      const totalFormats = Object.keys(T.cardRenderer.FORMATS).length;
-      els.downloadCard.textContent = `Rendering 1/${totalFormats}…`;
-      try {
-        const { downloaded, failed } = await T.cardRenderer.downloadAllCards(
-          currentReport,
-          {
-            onProgress: ({ done, total }) => {
-              if (done < total) {
-                els.downloadCard.textContent = `Rendering ${done + 1}/${total}…`;
-              } else {
-                els.downloadCard.textContent = `Downloaded ${done} ✓`;
-              }
-            }
-          }
-        );
-        if (failed.length > 0) {
-          els.downloadCard.textContent = `Downloaded ${downloaded.length}, ${failed.length} failed`;
-        }
-      } catch (_e) {
-        els.downloadCard.textContent = "Render failed";
-      } finally {
-        // Brief success flash, then restore the original label.
-        setTimeout(() => {
-          els.downloadCard.disabled = false;
-          els.downloadCard.textContent = "Generate share cards";
-        }, 1400);
-      }
-    });
-
-    // Close Duplicates — free tier per audit. Asks the worker to close all
-    // but one tab from each group of identical URLs, then re-fetches the report.
+    // Close extras — ask the worker to collapse same-site tabs to one
+    // per hostname (pinned tabs preserved). Refreshes the popup state
+    // so the merged extras block reflects the new counts.
     els.closeDupes.addEventListener("click", async () => {
       if (!currentReport || currentReport.stats.duplicateCount === 0) return;
       els.closeDupes.disabled = true;
@@ -105,8 +85,7 @@
       try {
         const res = await sendMessage({ type: "CLOSE_DUPLICATES" });
         const closed = (res && res.closed) || 0;
-        els.closeDupesLabel.textContent = `Closed ${closed} extra${closed === 1 ? "" : "s"} ✓`;
-        // Refresh the report so the popup reflects the new tab state.
+        els.closeDupesLabel.textContent = `Closed ${closed} ✓`;
         const fresh = await getReport();
         currentReport = fresh;
         render(fresh);
@@ -114,8 +93,8 @@
           els.closeDupesLabel.textContent = original;
           updateActionStates();
         }, 1400);
-      } catch (e) {
-        els.closeDupesLabel.textContent = "Couldn't close (try again)";
+      } catch (_e) {
+        els.closeDupesLabel.textContent = "Try again";
         setTimeout(() => {
           els.closeDupesLabel.textContent = original;
           updateActionStates();
@@ -123,13 +102,19 @@
       }
     });
 
-    // Premium upgrade button is intentionally inert in v1 — see PREMIUM HOOKS.
-    els.upgrade.addEventListener("click", (e) => e.preventDefault());
+    // View switching — settings is a sibling section inside the same card.
+    els.openSettings.addEventListener("click", () => showView("settings"));
+    els.closeSettings.addEventListener("click", () => showView("main"));
 
-    // Auto-group toggle — reflect stored setting and persist changes.
     initAutoGroupToggle();
     initNewTabModeSelect();
     initShortcutsPermButtons();
+    initClosePersonaGroups();
+  }
+
+  function showView(name) {
+    els.mainView.hidden = name !== "main";
+    els.settingsView.hidden = name !== "settings";
   }
 
   async function initAutoGroupToggle() {
@@ -138,15 +123,13 @@
       const settings = await T.storage.getSettings();
       els.autoGroupToggle.checked = settings.autoGroupPersonaTabs !== false;
     } catch (_e) {
-      els.autoGroupToggle.checked = true; // default on if storage unreadable
+      els.autoGroupToggle.checked = true;
     }
     els.autoGroupToggle.addEventListener("change", async () => {
       try {
         await T.storage.updateSettings({
           autoGroupPersonaTabs: els.autoGroupToggle.checked
         });
-        // If the user just enabled it and they're on a specific persona,
-        // re-run the diagnosis so the group gets created immediately.
         if (els.autoGroupToggle.checked) {
           await getReport().catch(() => {});
         }
@@ -169,6 +152,35 @@
         await T.storage.updateSettings({ newTabMode: els.newTabModeSelect.value });
       } catch (e) {
         console.warn("[TabShame] failed to persist newTabMode setting:", e);
+      }
+    });
+  }
+
+  // "Close persona groups" — closes every tab inside every tracked
+  // persona group. Useful as a single bulk action after a focus session.
+  function initClosePersonaGroups() {
+    if (!els.closePersonaGroups) return;
+    els.closePersonaGroups.addEventListener("click", async () => {
+      els.closePersonaGroups.disabled = true;
+      const originalSub = els.closeGroupsSub.textContent;
+      els.closeGroupsSub.textContent = "Closing…";
+      try {
+        const res = await sendMessage({ type: "CLOSE_PERSONA_GROUPS" });
+        const closed = (res && res.closed) || 0;
+        const groupCount = (res && res.groupCount) || 0;
+        if (closed === 0) {
+          els.closeGroupsSub.textContent = "No persona groups to close.";
+        } else {
+          els.closeGroupsSub.textContent =
+            `Closed ${closed} tab${closed === 1 ? "" : "s"} across ${groupCount} group${groupCount === 1 ? "" : "s"} ✓`;
+        }
+      } catch (_e) {
+        els.closeGroupsSub.textContent = "Couldn't close — try again.";
+      } finally {
+        setTimeout(() => {
+          els.closeGroupsSub.textContent = originalSub;
+          els.closePersonaGroups.disabled = false;
+        }, 2000);
       }
     });
   }
@@ -227,8 +239,6 @@
             });
           });
         } else {
-          // Remove the kind-specific permission; keep `favicon` if the
-          // other kind still uses it.
           const primaryPerm = PERMS_FOR_KIND[kind].permissions
             .filter((p) => p !== "favicon");
           await new Promise((resolve, reject) => {
@@ -253,7 +263,6 @@
       await refresh(kind);
     }
 
-    // Stay in sync if the user grants/revokes from another surface.
     try {
       chrome.permissions.onAdded.addListener(refreshAll);
       chrome.permissions.onRemoved.addListener(refreshAll);
@@ -278,11 +287,6 @@
     });
   }
 
-  // Drain the worker's "pending transition" record on every popup open so
-  // the toolbar badge clears even though we no longer render an unlock
-  // banner. The worker exposes a read-once message — first read returns
-  // the transition, subsequent reads return null. Nothing to display, so
-  // we just fire-and-forget and ignore the response.
   async function drainPendingTransition() {
     try {
       await sendMessage({ type: "GET_AND_CLEAR_PENDING_TRANSITION" });
@@ -294,8 +298,8 @@
     const hasDupes = currentReport.stats.duplicateCount > 0;
     els.closeDupes.disabled = !hasDupes;
     els.closeDupes.title = hasDupes
-      ? `Close ${currentReport.stats.duplicateCount} extra tab(s) · keeps one of each URL`
-      : "Nothing to close — every open tab is unique";
+      ? `Close ${currentReport.stats.duplicateCount} same-site tab(s) — keeps one per site`
+      : "Nothing to close — every open tab is from a different site";
   }
 
   function getReport() {
@@ -311,10 +315,8 @@
   function render(report) {
     const tabCount = report.stats.tabCount;
     els.tabCount.textContent = String(tabCount);
-    els.tabsLabel.textContent = tabCount === 1 ? "TAB OPEN" : "TABS OPEN";
-    // Band label is the "reading the room…" tone line; it's qualitative
-    // (e.g. "ambitious", "feral") and lives on the popup as personality
-    // even though the underlying score number is no longer shown.
+    els.tabsLabel.textContent = tabCount === 1 ? "tab open" : "tabs open";
+    // Band label sits as italic commentary — "feral", "ambitious", etc.
     els.scoreBand.textContent = report.band.label;
     els.archetypeName.textContent = report.archetype.name;
     els.archetypeEmoji.textContent = report.archetype.emoji;
@@ -324,7 +326,7 @@
     const top = (report.stats.topDomains || [])[0];
     if (top) {
       els.tileHaunt.textContent = top.domain;
-      els.tileHauntCount.textContent = `${top.count} TAB${top.count === 1 ? "" : "S"}`;
+      els.tileHauntCount.textContent = `${top.count} tab${top.count === 1 ? "" : "s"}`;
     } else {
       els.tileHaunt.textContent = "—";
       els.tileHauntCount.textContent = "no haunts yet";
@@ -336,16 +338,12 @@
 
   function renderError(e) {
     els.tabCount.textContent = "—";
-    els.tabsLabel.textContent = "TABS OPEN";
-    els.scoreBand.textContent = "Couldn't read tabs.";
+    els.tabsLabel.textContent = "tabs open";
+    els.scoreBand.textContent = "couldn't read tabs";
     els.archetypeName.textContent = "Diagnosis unavailable";
     els.archetypeDesc.textContent =
       "TabShame couldn't reach the service worker. Try reloading the extension at chrome://extensions.";
     els.roast.textContent = `"${String(e && e.message ? e.message : e)}"`;
-  }
-
-  function formatDate(d) {
-    return d.toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric" });
   }
 
   document.addEventListener("DOMContentLoaded", init);

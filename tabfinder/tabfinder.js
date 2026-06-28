@@ -292,16 +292,47 @@
   }
 
   // ─── Actions ───────────────────────────────────────────────────────
+  // Only closes the finder if the switch actually succeeded. Previously
+  // the finder closed unconditionally — if the target tab was already
+  // gone (closed since the index was built) the user was left looking
+  // at whatever tab they ended up on with no easy way back, having lost
+  // their search context. Now: failed switch → finder stays, the row
+  // briefly flashes a "tab no longer exists" hint, and the user can
+  // pick another result.
   async function switchToTab(tab) {
     if (!tab) return;
+    const updated = await new Promise((resolve) => {
+      try {
+        chrome.tabs.update(tab.id, { active: true }, (t) => {
+          if (chrome.runtime.lastError || !t) resolve(false);
+          else resolve(true);
+        });
+      } catch (_e) { resolve(false); }
+    });
+    if (!updated) {
+      flashTabRowGone(tab.id);
+      allTabs = allTabs.filter((t) => t.id !== tab.id);
+      render();
+      return;
+    }
     try {
-      await new Promise((r) => chrome.tabs.update(tab.id, { active: true }, () => r()));
-      await new Promise((r) => chrome.windows.update(tab.windowId, { focused: true }, () => r()));
-    } catch (_e) {}
-    // Close the finder tab itself so the user lands on their target.
+      await new Promise((resolve) => {
+        chrome.windows.update(tab.windowId, { focused: true }, () => resolve());
+      });
+    } catch (_e) { /* window focus is best-effort */ }
+    // Only close the finder tab when the switch is confirmed successful.
     if (myTabId != null) {
       try { chrome.tabs.remove(myTabId); } catch (_e) {}
     }
+  }
+
+  // Brief visual signal on a tile that the underlying tab is gone.
+  // Re-render right after so the dead row disappears.
+  function flashTabRowGone(tabId) {
+    const tile = els.results.querySelector(`[data-tab-id="${tabId}"]`);
+    if (!tile) return;
+    tile.classList.add("tab-tile-gone");
+    setTimeout(() => tile.classList.remove("tab-tile-gone"), 700);
   }
 
   async function closeTab(tabId) {

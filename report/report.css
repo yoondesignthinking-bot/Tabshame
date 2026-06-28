@@ -68,7 +68,7 @@ body {
 .page {
   max-width: 980px;
   margin: 0 auto;
-  padding: 56px 32px 72px;
+  padding: 36px 32px 64px;
 }
 
 /* Header ────────────────────────────────────────────────── */
@@ -81,27 +81,34 @@ body {
   font-weight: 600;
   letter-spacing: 0.16em;
   color: var(--ink-soft);
-  margin-bottom: 56px;
+  margin-bottom: 28px;
 }
 
-/* Hero ───────────────────────────────────────────────────── */
+/* Hero — COMPACT variant (Jun 2026) puts the share card section above
+   the fold on a typical 900h laptop. Tab count clamp halved, vertical
+   padding lighter, max-width tighter so the rest of the page scrolls
+   into view much sooner. */
 .hero {
   text-align: center;
-  margin-bottom: 80px;
+  margin-bottom: 40px;
+}
+
+.hero-compact {
+  margin-bottom: 32px;
 }
 
 .hero-inner {
   display: inline-flex;
   align-items: flex-end;
-  gap: 28px;
-  margin-bottom: 24px;
+  gap: 22px;
+  margin-bottom: 16px;
 }
 
 .big-count {
   font-family: var(--font-serif);
   font-weight: 900;
-  font-size: clamp(180px, 28vw, 320px);
-  line-height: 0.82;
+  font-size: clamp(120px, 17vw, 180px);
+  line-height: 0.85;
   color: var(--shame);
   letter-spacing: -0.045em;
   text-align: left;
@@ -110,34 +117,34 @@ body {
 
 .big-count-meta {
   text-align: left;
-  padding-bottom: 20px;
+  padding-bottom: 14px;
 }
 
 .big-count-label {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.14em;
   color: var(--ink-soft);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .big-count-band {
   font-family: var(--font-italic);
   font-style: italic;
-  font-size: 22px;
+  font-size: 17px;
   line-height: 1.25;
-  max-width: 320px;
+  max-width: 240px;
   color: var(--ink);
 }
 
 .hero-roast {
   font-family: var(--font-italic);
   font-style: italic;
-  font-size: 26px;
+  font-size: 19px;
   line-height: 1.4;
-  max-width: 700px;
-  margin: 24px auto 0;
+  max-width: 640px;
+  margin: 14px auto 0;
   color: var(--ink);
 }
 
@@ -334,6 +341,72 @@ body {
   margin-bottom: 64px;
 }
 
+/* Direct share row — primary CTAs ABOVE the three per-format card
+   previews. X opens a compose intent; Instagram downloads the Story
+   card (no web compose intent exists for IG). The 3 download cards
+   below act as the per-format fallback for power users. */
+.share-direct {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.share-btn {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 14px 22px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.06s ease, opacity 0.15s ease;
+  flex: 1 1 220px;
+  justify-content: center;
+}
+
+.share-btn:active { transform: translateY(1px); }
+.share-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.share-icon {
+  flex-shrink: 0;
+}
+
+.share-btn-x {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.share-btn-x:hover { opacity: 0.92; }
+
+.share-btn-ig {
+  /* The yellow stop (#f9ce34) gives white text only ~1.5:1 contrast.
+     Pulled the yellow back to 12% so it sits behind the icon, not the
+     label. A soft ink text-shadow doubles up the legibility on whatever
+     mid-gradient color the text ends up over. */
+  background: linear-gradient(135deg, #f9ce34 0%, #ee2a7b 25%, #6228d7 100%);
+  color: #fff;
+  border: none;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+}
+
+.share-btn-ig:hover { opacity: 0.92; }
+
+.share-direct-note {
+  font-family: var(--font-italic);
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  margin: 0 0 24px;
+  max-width: 720px;
+}
+
 .card-previews {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -440,63 +513,9 @@ body {
   letter-spacing: 0.16em;
 }
 
-/* Cleanup section ───────────────────────────────────────── */
-.cleanup {
-  margin-bottom: 64px;
-}
-
-.cleanup-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
-}
-
-.cleanup-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 18px 18px;
-  border-radius: 12px;
-  border: none;
-  background: var(--lavender);
-  color: var(--ink);
-  cursor: pointer;
-  text-align: left;
-  font-family: inherit;
-  transition: transform 0.06s ease, opacity 0.15s ease;
-}
-
-.cleanup-btn:active {
-  transform: translateY(1px);
-}
-
-.cleanup-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.cleanup-btn-locked {
-  background: var(--paper-elev);
-  border: 1px dashed var(--ink-ghost);
-  cursor: not-allowed;
-}
-
-.cleanup-btn-title {
-  font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: 18px;
-  line-height: 1.2;
-}
-
-.cleanup-btn-sub {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: var(--ink-soft);
-  text-transform: uppercase;
-}
+/* Cleanup section was removed in Jun 2026 — the only non-Pro action
+   it housed (Close extras) now lives on the popup, and per-haunt × close
+   buttons in the haunt list above cover the rest of the cleanup story. */
 
 @media (max-width: 720px) {
   .hero-inner {

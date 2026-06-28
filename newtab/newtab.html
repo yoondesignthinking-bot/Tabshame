@@ -4,137 +4,103 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>New Tab · TabShame</title>
+    <link rel="stylesheet" href="../lib/fonts.css" />
     <link rel="stylesheet" href="newtab.css" />
   </head>
   <!--
-    Default to mode-full. The casual_hoarder persona renders in the same
-    layout as any specific archetype now; there's no separate "casual"
-    mode that strips the page. newtab.js promotes to mode-lite if the
-    user has explicitly preferred shortcuts-first.
+    Jun 2026 redesign:
+      - Roast title becomes one line: emoji + archetype name. Tab count
+        moves to the popup (the new-tab page is the "personality" surface,
+        not the diagnosis surface).
+      - Roast text is the centerpiece: large italic serif pull-quote with
+        a peach left border.
+      - 3 buttons, horizontal, tertiary-styled (outline only).
+      - Recent-sites is the only opt-in shortcut row. Bookmark-bar CTA
+        was removed (the new-tab page got too crowded with two parallel
+        permission prompts).
+      - Lite-mode toggle was removed too — too unclear. Users who want
+        a shortcuts-first view set newTabMode in the popup Settings page.
+      - Placeholders use a CSS skeleton pulse instead of literal "…" / "--".
   -->
   <body class="mode-full" aria-busy="true">
-    <!-- Full mode: persona showcase ────────────────────────────────────── -->
     <main class="stage" data-mode-full>
       <header class="topbar">
         <span class="brand">TAB SHAME</span>
         <span class="topbar-date" id="dateLabel"></span>
       </header>
 
-      <!-- Persona column. In full mode it sits in the normal column
-           flow (acts like a poster); in lite mode the .stage becomes a
-           two-column grid and this column is a compact card on the left. -->
       <div class="persona-column">
+        <!-- Hero: one-line roast title (emoji + archetype name). -->
         <section class="hero">
-          <div class="hero-eyebrow">Hi, you're</div>
-          <div class="hero-name">
+          <h1 class="hero-name" id="heroName">
             <span class="hero-emoji" id="archetypeEmoji">🐌</span>
-            <span class="hero-archetype" id="archetypeName">Diagnosing…</span>
-          </div>
-          <div class="hero-stats">
-            <span class="hero-count" id="tabCount">--</span>
-            <span class="hero-stats-divider" hidden>·</span>
-          </div>
+            <span class="hero-archetype" id="archetypeName">Diagnosing your tabs</span>
+          </h1>
         </section>
 
+        <!-- Pull-quote roast — the personality. -->
         <section class="roast-block">
-          <p class="roast-line" id="roastLine">…</p>
+          <blockquote class="roast-line" id="roastLine">
+            <span class="skeleton-line skeleton-line-lg"></span>
+            <span class="skeleton-line"></span>
+            <span class="skeleton-line skeleton-line-sm"></span>
+          </blockquote>
         </section>
 
+        <!-- 3 horizontal tertiary buttons. -->
         <section class="actions">
-          <button class="btn btn-primary" id="downloadCard" title="Downloads X / Threads (16:9), Instagram feed (4:5), and Stories (9:16)">Share cards · all formats</button>
-          <button
-            class="btn btn-secondary"
-            id="openTabFinder"
-            title="Open full tab finder (Cmd+Shift+F)"
-          >
-            Find a tab · all open tabs in one grid
+          <button class="btn btn-tertiary" id="openReport">Open report</button>
+          <button class="btn btn-tertiary" id="openTabFinder" title="Find a tab (Cmd+Shift+F)">
+            Find a tab
           </button>
-          <button class="btn btn-secondary" id="closeDupes" disabled>
-            <span id="closeDupesLabel">Close extras · keep one of each</span>
+          <button class="btn btn-tertiary" id="closeDupes" disabled>
+            <span id="closeDupesLabel">Close extras</span>
           </button>
-          <button class="btn btn-tertiary" id="openReport">Open full report</button>
         </section>
       </div>
 
-      <!-- Shortcuts column. In full mode it sits below the persona; in
-           lite mode it's the main right-hand column. Two independent
-           permission pipelines, side-by-side at wide widths. ────────── -->
+      <!-- Single Recent-sites column. Bookmark-bar CTA removed Jun 2026. -->
       <div class="shortcuts-column">
         <div class="shortcuts-stack">
-        <section class="shortcuts-section shortcuts-section-recent" data-shortcuts-section="recent">
-          <section class="shortcuts-cta" data-shortcuts-cta="recent" hidden>
-            <div class="shortcuts-cta-title">Show your Recent sites here?</div>
-            <div class="shortcuts-cta-actions">
-              <button class="btn btn-primary" data-shortcuts-add="recent">
-                Show Recent
-              </button>
+          <section class="shortcuts-section shortcuts-section-recent" data-shortcuts-section="recent">
+            <section class="shortcuts-cta" data-shortcuts-cta="recent" hidden>
+              <div class="shortcuts-cta-title">Show your recent sites here?</div>
+              <div class="shortcuts-cta-actions">
+                <button class="btn btn-primary" data-shortcuts-add="recent">
+                  Show recent
+                </button>
+              </div>
+            </section>
+
+            <div class="shortcuts" data-shortcuts="recent" hidden>
+              <div class="shortcuts-label">Recent</div>
+              <div class="shortcuts-grid" data-shortcuts-grid="recent"></div>
+              <div class="shortcuts-more-row" data-shortcuts-more-row="recent" hidden>
+                <button class="mode-link" data-shortcuts-more="recent" type="button">
+                  show more
+                </button>
+              </div>
+              <div class="shortcuts-remove-row">
+                <button class="mode-link" data-shortcuts-remove="recent" type="button">
+                  remove
+                </button>
+              </div>
             </div>
           </section>
-
-          <div class="shortcuts" data-shortcuts="recent" hidden>
-            <div class="shortcuts-label">Recent</div>
-            <div class="shortcuts-grid" data-shortcuts-grid="recent"></div>
-            <div class="shortcuts-more-row" data-shortcuts-more-row="recent" hidden>
-              <button class="mode-link" data-shortcuts-more="recent" type="button">
-                show more
-              </button>
-            </div>
-            <div class="shortcuts-remove-row">
-              <button class="mode-link" data-shortcuts-remove="recent" type="button">
-                remove
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section class="shortcuts-section shortcuts-section-bookmarks" data-shortcuts-section="bookmarks">
-          <section class="shortcuts-cta" data-shortcuts-cta="bookmarks" hidden>
-            <div class="shortcuts-cta-title">Show your Bookmark Bar here?</div>
-            <div class="shortcuts-cta-actions">
-              <button class="btn btn-primary" data-shortcuts-add="bookmarks">
-                Show Bookmarks
-              </button>
-            </div>
-          </section>
-
-          <div class="shortcuts" data-shortcuts="bookmarks" hidden>
-            <div class="shortcuts-label">Bookmark Bar</div>
-            <div class="shortcuts-grid" data-shortcuts-grid="bookmarks"></div>
-            <div class="shortcuts-more-row" data-shortcuts-more-row="bookmarks" hidden>
-              <button class="mode-link" data-shortcuts-more="bookmarks" type="button">
-                show more
-              </button>
-            </div>
-            <div class="shortcuts-remove-row">
-              <button class="mode-link" data-shortcuts-remove="bookmarks" type="button">
-                remove
-              </button>
-            </div>
-          </div>
-        </section>
         </div>
-      </div><!-- /.shortcuts-column -->
+      </div>
 
       <footer class="stage-footer">
-        <button class="mode-link" id="switchToLite" type="button">
-          switch to lite mode
-        </button>
         <span class="footer-meta">
           all processing happens locally · we never see your tabs
         </span>
       </footer>
     </main>
 
-    <!-- Lite mode: shortcuts-first. Reuses the .stage structure but
-         hides the persona content (hero / roast / actions) via mode-lite
-         CSS rules, leaving topbar + Recent + Bookmark + footer. The
-         toolbar popup is the path to the persona card when in lite. ─── -->
-
     <script src="../lib/storage.js"></script>
     <script src="../lib/domain-rules.js"></script>
     <script src="../lib/archetype-engine.js"></script>
     <script src="../lib/shame-engine.js"></script>
-    <script src="../lib/card-renderer.js"></script>
     <script src="newtab.js"></script>
   </body>
 </html>

@@ -1,9 +1,11 @@
 """
 Generates placeholder TabShame icons (16, 48, 128) using only the stdlib.
 
-The icons are a peach square with a bold black "TS" wordmark + a small
-shame-red dot. Designed-but-temporary. Replace with the real icon set once
-illustration is ready. This script lives in /assets so anyone can re-run it:
+The icons are a peach square with a bold black "TS" wordmark. Notification
+state is driven by chrome.action.setBadgeText (the always-on tab-count
+badge) and OS notifications, not by a baked-in red dot — the dot in the
+earlier revision looked decorative rather than like a notification, so
+it was removed in Jun 2026.
 
     python3 assets/_make_icons.py
 
@@ -19,7 +21,6 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 # Palette (TabShame design system)
 PEACH = (255, 137, 102, 255)
 INK = (26, 22, 18, 255)
-SHAME = (230, 57, 70, 255)
 PAPER = (244, 237, 224, 255)
 
 
@@ -36,17 +37,11 @@ def make_pixels(size):
             else:
                 _set(px, i, (0, 0, 0, 0))
 
-    # Shame dot in the top-right corner.
-    dot_r = max(1, size // 8)
-    dot_cx = size - dot_r - max(1, size // 10)
-    dot_cy = dot_r + max(1, size // 10)
-    for y in range(size):
-        for x in range(size):
-            if (x - dot_cx) ** 2 + (y - dot_cy) ** 2 <= dot_r * dot_r:
-                i = (y * size + x) * 4
-                _set(px, i, SHAME)
-
     # "TS" wordmark — drawn from a 5x7 bitmap font, scaled.
+    # No shame-dot in the corner: notifications are now signaled by the
+    # toolbar badge text (chrome.action.setBadgeText) so the base icon
+    # stays clean. A decorative dot can't be reliably distinguished from
+    # a real notification indicator, which was the original complaint.
     _draw_text(px, size, "TS", INK)
 
     return px

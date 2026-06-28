@@ -1,8 +1,20 @@
 /*
  * popup.css
  *
- * Editorial / zine styling. Paper background, bold serif numbers, mono labels.
- * Popup width is constrained by Chrome — keep it under ~420px.
+ * Editorial / zine styling. Paper background, bold serif numbers, mono
+ * labels. Popup width is constrained by Chrome — keep it under ~420px.
+ *
+ * New hierarchy (Jun 2026 redesign):
+ *   1. Small "73 tabs open · feral" line at the top (was the dominant hero).
+ *   2. Archetype emoji + name + description is the visual hero.
+ *   3. Pull-quote italic roast — the personality.
+ *   4. Single merged "TOP HAUNT + N extras + Close extras" block.
+ *   5. Two-button action row: Open report (primary), Find a tab (secondary).
+ *
+ * Filled = primary (ink fill, paper text).
+ * Outline = secondary (ink border, ink text, transparent fill).
+ * One accent: --ink for primary, transparent border for secondary.
+ * No competing colored buttons.
  */
 
 :root {
@@ -12,7 +24,7 @@
   --ink-faint: rgba(26, 22, 18, 0.35);
   --ink-ghost: rgba(26, 22, 18, 0.1);
   --paper: #f4ede0;
-  --paper-elev: rgba(255, 255, 255, 0.55);     /* raised tile bg */
+  --paper-elev: rgba(255, 255, 255, 0.55);
   --paper-elev-hover: rgba(255, 255, 255, 0.9);
   --paper-elev-soft: rgba(255, 255, 255, 0.4);
   --peach: #ff8966;
@@ -25,15 +37,12 @@
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-/* Dark theme — follows the user's system preference automatically.
-   Inverts paper↔ink, mutes accents slightly, swaps the "raised tile"
-   surface from white-on-paper to light-on-ink. */
 @media (prefers-color-scheme: dark) {
   :root {
     --ink: #f0e6d4;
     --ink-soft: rgba(240, 230, 212, 0.7);
-    --ink-faint: rgba(240, 230, 212, 0.42);
-    --ink-ghost: rgba(240, 230, 212, 0.14);
+    --ink-faint: rgba(240, 230, 212, 0.45);
+    --ink-ghost: rgba(240, 230, 212, 0.16);
     --paper: #1c1612;
     --paper-elev: rgba(255, 255, 255, 0.06);
     --paper-elev-hover: rgba(255, 255, 255, 0.11);
@@ -60,9 +69,9 @@ body {
 
 .card {
   position: relative;
-  padding: 22px 22px 18px;
+  padding: 18px 22px 16px;
   background:
-    linear-gradient(135deg, rgba(255, 137, 102, 0.12), rgba(184, 164, 255, 0.18)),
+    linear-gradient(135deg, rgba(255, 137, 102, 0.10), rgba(184, 164, 255, 0.14)),
     var(--paper);
   min-height: 460px;
 }
@@ -75,151 +84,205 @@ body {
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   color: var(--ink-soft);
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
-/* Hero (tab count) ──────────────────────────────────────── */
-.hero-block {
+.hdr-mark {
+  flex: 1;
+}
+
+.hdr-spacer {
+  width: 24px;
+}
+
+.hdr-settings,
+.hdr-back {
+  background: transparent;
+  border: none;
+  padding: 4px 6px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.hdr-settings:hover,
+.hdr-back:hover {
+  background: var(--paper-elev);
+  color: var(--ink);
+}
+
+/* Top meta line: "73 tabs open · feral" — small, scannable ─ */
+.hero-meta-top {
   display: flex;
-  align-items: flex-end;
-  gap: 14px;
-  margin-bottom: 12px;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ink-ghost);
 }
 
-.hero-count {
-  font-family: var(--font-serif);
-  font-weight: 900;
-  font-size: 108px;
-  line-height: 0.82;
-  color: var(--shame);
-  letter-spacing: -0.04em;
+.hero-tab-count {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
-.hero-meta {
-  padding-bottom: 8px;
+.hero-tab-label {
+  text-transform: lowercase;
+  font-size: 11px;
 }
 
-.hero-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: var(--ink-soft);
-  margin-bottom: 4px;
-}
-
-.hero-band {
+.hero-band-inline {
+  margin-left: auto;
   font-family: var(--font-italic);
   font-style: italic;
-  font-size: 14px;
-  color: var(--ink);
-  max-width: 200px;
-  line-height: 1.25;
+  font-size: 12px;
+  color: var(--ink-faint);
+  text-transform: none;
+  letter-spacing: 0;
 }
 
-/* Archetype ─────────────────────────────────────────────── */
-.archetype {
-  border-top: 1px solid var(--ink-ghost);
-  padding-top: 14px;
+.hero-band-inline:not(:empty)::before {
+  content: "· ";
+  margin-right: 2px;
+}
+
+/* Archetype hero — the visual center now */
+.archetype-hero {
   margin-bottom: 16px;
 }
 
-.archetype-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .archetype-emoji {
-  font-size: 24px;
+  font-size: 40px;
+  line-height: 1;
+  display: inline-block;
+  margin-bottom: 8px;
 }
 
 .archetype-name {
   font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: 22px;
-  line-height: 1.1;
+  font-weight: 900;
+  font-size: 28px;
+  line-height: 1.05;
+  margin: 0 0 6px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
 }
 
 .archetype-desc {
-  margin: 6px 0 0;
+  margin: 0;
   font-size: 13px;
   color: var(--ink-soft);
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
-/* Stats ─────────────────────────────────────────────────── */
-.stats {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.tile {
-  background: var(--paper-elev);
-  border-radius: 10px;
-  padding: 12px 10px 10px;
-  text-align: center;
-}
-
-.tile-value {
-  font-family: var(--font-serif);
-  font-weight: 900;
-  font-size: 30px;
-  line-height: 1;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
-
-.tile-haunt-name {
-  font-size: 18px;
-  word-break: break-all;
-}
-
-.tile-haunt-sub {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--ink-soft);
-  margin-top: 2px;
-}
-
-.tile-label {
-  margin-top: 6px;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--ink-soft);
-}
-
-/* Roast ─────────────────────────────────────────────────── */
+/* Pull-quote roast — italic serif, peach left border. The personality. */
 .roast {
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .roast-line {
   margin: 0;
   font-family: var(--font-italic);
   font-style: italic;
-  font-size: 14px;
-  line-height: 1.45;
+  font-size: 16px;
+  line-height: 1.42;
   color: var(--ink);
-  background: var(--paper-elev-soft);
-  padding: 12px 14px;
-  border-radius: 8px;
-  border-left: 2px solid var(--peach);
+  padding: 4px 0 4px 14px;
+  border-left: 3px solid var(--peach);
 }
 
-/* Actions ───────────────────────────────────────────────── */
-.actions {
+/* Merged extras block — TOP HAUNT + N extras + Close extras CTA ─ */
+.extras-block {
+  background: var(--paper-elev);
+  border-radius: 12px;
+  padding: 14px 14px 12px;
+  margin-bottom: 12px;
+}
+
+.extras-row {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.extras-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.extras-haunt-label,
+.extras-count-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.extras-haunt-name {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.15;
+  margin: 4px 0 2px;
+  color: var(--ink);
+  word-break: break-all;
+}
+
+.extras-haunt-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.extras-action {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.extras-count-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.extras-count {
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 32px;
+  line-height: 1;
+  color: var(--shame);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Buttons — only two roles ────────────────────────────────── */
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 14px;
 }
@@ -232,47 +295,58 @@ body {
   text-transform: uppercase;
   padding: 10px 14px;
   border-radius: 8px;
-  border: none;
+  border: 1px solid var(--ink);
   cursor: pointer;
-  transition: transform 0.06s ease, opacity 0.15s ease;
+  transition: transform 0.06s ease, opacity 0.15s ease, background 0.15s ease;
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .btn:active {
   transform: translateY(1px);
 }
 
+.btn-block {
+  width: 100%;
+  padding: 8px 14px;
+  font-size: 11px;
+}
+
+/* Filled = primary */
 .btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.btn-primary:hover {
+  background: var(--ink);
+  opacity: 0.92;
+}
+
+/* Outline = secondary */
+.btn-secondary {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+}
+
+.btn-secondary:hover {
   background: var(--ink);
   color: var(--paper);
 }
 
-.btn-secondary {
-  background: var(--peach);
-  color: var(--ink);
-}
-
-.btn-action {
-  background: var(--lavender);
-  color: var(--ink);
-}
-
-.btn-action:disabled {
-  opacity: 0.5;
+.btn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
-}
-
-.btn-locked {
   background: transparent;
   color: var(--ink-soft);
-  border: 1px dashed var(--ink-faint);
-  cursor: not-allowed;
+  border-color: var(--ink-faint);
 }
 
-/* Prefs (inline toggle row) ───────────────────────────── */
+/* Prefs (settings view) ───────────────────────────────────── */
 .prefs {
   margin-bottom: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--ink-ghost);
 }
 
 .pref-row {
@@ -281,10 +355,16 @@ body {
   gap: 10px;
   cursor: pointer;
   user-select: none;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ink-ghost);
 }
 
-.pref-row:last-child { margin-bottom: 0; }
+.pref-row:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
 
 .pref-row-select,
 .pref-row-action {
@@ -312,21 +392,27 @@ body {
   text-transform: uppercase;
   padding: 6px 10px;
   border-radius: 6px;
-  border: 1px solid rgba(26, 22, 18, 0.2);
-  background: var(--paper-elev);
+  border: 1px solid var(--ink);
+  background: transparent;
   color: var(--ink);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .btn-pref-action:hover {
-  background: var(--paper-elev-hover);
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .btn-pref-action[data-state="remove"] {
-  border-color: rgba(230, 57, 70, 0.5);
+  border-color: var(--shame);
   color: var(--shame);
+}
+
+.btn-pref-action[data-state="remove"]:hover {
+  background: var(--shame);
+  color: var(--paper);
 }
 
 .pref-select {
@@ -336,8 +422,8 @@ body {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink);
-  background: var(--paper-elev);
-  border: 1px solid var(--ink-faint);
+  background: transparent;
+  border: 1px solid var(--ink);
   border-radius: 6px;
   padding: 5px 8px;
   cursor: pointer;
@@ -366,7 +452,7 @@ body {
 
 .pref-sub {
   font-size: 11px;
-  line-height: 1.35;
+  line-height: 1.4;
   color: var(--ink-soft);
 }
 
@@ -375,8 +461,41 @@ body {
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.08em;
-  color: var(--ink-soft);
+  text-transform: uppercase;
+  color: var(--ink-faint);
   text-align: center;
-  padding-top: 10px;
+  padding-top: 12px;
   border-top: 1px solid var(--ink-ghost);
+}
+
+/* Loading skeleton — pulse on the placeholder values ──── */
+.card[aria-busy="true"] #tabCount,
+.card[aria-busy="true"] #archetypeName,
+.card[aria-busy="true"] #archetypeEmoji,
+.card[aria-busy="true"] #archetypeDesc,
+.card[aria-busy="true"] #roast,
+.card[aria-busy="true"] #tileDupes,
+.card[aria-busy="true"] #tileHaunt,
+.card[aria-busy="true"] #tileHauntCount,
+.card[aria-busy="true"] #scoreBand {
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+  color: transparent;
+  background: linear-gradient(
+    90deg,
+    var(--paper-elev-soft) 0%,
+    var(--paper-elev) 50%,
+    var(--paper-elev-soft) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 4px;
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { background-position: 0% 0; }
+  50% { background-position: -100% 0; }
+}
+
+/* View switching — hide whichever view isn't active ──── */
+section[data-view][hidden] {
+  display: none;
 }

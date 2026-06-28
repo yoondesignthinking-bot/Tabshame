@@ -62,6 +62,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 chrome.runtime.onStartup.addListener(async () => {
   await reconcileWithOpenTabs();
   await scheduleAlarms();
+  refreshBadgeCount();
 });
 
 // Keyboard shortcut → open the tab finder page. Manifest declares
@@ -214,6 +215,7 @@ function normalizeTab(tab, now, source) {
 
 // ─── tab lifecycle ───────────────────────────────────────────────────────
 chrome.tabs.onCreated.addListener(async (tab) => {
+  refreshBadgeCount();
   if (await shouldSkipTab(tab)) return;
   await T.storage.upsertTab(normalizeTab(tab, Date.now(), "live"));
   // Run the diagnosis inline. chrome.alarms below 30s isn't reliable in MV3,
@@ -257,6 +259,7 @@ chrome.tabs.onActivated.addListener(async ({ tabId }) => {
 });
 
 chrome.tabs.onRemoved.addListener(async (tabId) => {
+  refreshBadgeCount();
   await T.storage.removeTab(tabId);
   await T.storage.bumpClosedStats();
   // We don't fire a transition notif on demotion (specific → casual_hoarder),
@@ -463,14 +466,9 @@ async function notifyArchetypeTransition(report) {
   });
 
   if (kind === "earn") {
-    // Loud first-time alert: badge + OS notification.
-    try {
-      chrome.action.setBadgeText({ text: "!" });
-      chrome.action.setBadgeBackgroundColor({ color: "#e63946" });
-      chrome.action.setBadgeTextColor({ color: "#ffffff" });
-    } catch (e) {
-      console.warn("[TabShame] badge update failed:", e);
-    }
+    // Loud first-time alert: OS notification only. The badge stays as
+    // the live tab-count number (refreshBadgeCount runs on every tab
+    // event) — overriding it with "!" would hide the always-on count.
     try {
       chrome.notifications.create(`tabshame_transition_${Date.now()}`, {
         type: "basic",
@@ -483,29 +481,43 @@ async function notifyArchetypeTransition(report) {
     } catch (e) {
       console.warn("[TabShame] notification create failed:", e);
     }
-  } else {
-    // Quiet specific → specific shift. No OS notification (would be spam
-    // as users tip between personas). Update badge to a subtle dot so the
-    // toolbar nudges the user to glance at the popup.
-    try {
-      chrome.action.setBadgeText({ text: "•" });
-      chrome.action.setBadgeBackgroundColor({ color: "#1a1612" });
-      chrome.action.setBadgeTextColor({ color: "#ff8966" });
-    } catch (e) {
-      console.warn("[TabShame] badge update failed:", e);
-    }
   }
+  // Quiet specific → specific shifts have no OS notification (would be
+  // spam as users tip between personas). The popup banner — surfaced
+  // via pendingTransition — handles the in-app callout.
 
   return { fired: true, kind, last, current };
 }
 
 function clearTransitionBadge() {
+  // Keep the live tab count visible — only clear the title flash.
   try {
-    chrome.action.setBadgeText({ text: "" });
     chrome.action.setTitle({ title: "TabShame" });
-  } catch (e) {
-    // Non-fatal.
-  }
+  } catch (_e) { /* non-fatal */ }
+  refreshBadgeCount();
+}
+
+// Always-on tab-count badge. Reads from chrome.tabs.query (cheap, ~ms)
+// and renders the count as the toolbar badge — Chrome caps badge text
+// at 4 chars, so we render counts up to "9999" then "9k+" beyond. The
+// background colour is paper-ink so the number reads as informational,
+// not alarming. Transition events (`!`) temporarily override this text
+// for ~6s, then refreshBadgeCount() reverts to the live count.
+function refreshBadgeCount() {
+  try {
+    chrome.tabs.query({}, (tabs) => {
+      const n = (tabs && tabs.length) || 0;
+      let text;
+      if (n === 0) text = "";
+      else if (n < 10000) text = String(n);
+      else text = "9k+";
+      try {
+        chrome.action.setBadgeText({ text });
+        chrome.action.setBadgeBackgroundColor({ color: "#1a1612" });
+        chrome.action.setBadgeTextColor({ color: "#f4ede0" });
+      } catch (_e) { /* non-fatal */ }
+    });
+  } catch (_e) { /* non-fatal */ }
 }
 
 // ─── persona tab grouping ───────────────────────────────────────────────
@@ -594,18 +606,21 @@ function tabsQueryByGroupId(groupId) {
 }
 
 // Releases tracked persona groups that no longer reflect the current
-// diagnosis. Two release conditions:
-//   1. The group's archetypeId is NOT the current one (user changed
-//      persona — old group is stale).
-//   2. The group has fewer than 2 tabs left (a 1-tab group is just a
-//      pill in the tab strip with no grouping value).
+// diagnosis. ONE release condition (as of Jun 2026):
+//   • The group has fewer than 2 tabs left — a 1-tab group is just a
+//     pill in the tab strip with no grouping value.
+// We deliberately DO NOT release groups for archetypes the user has
+// moved away from. If you were The LinkedIn Lurker an hour ago and
+// have now drifted into The YouTube Rabbit-Holer, the LinkedIn group
+// still has meaning — those tabs are still LinkedIn tabs — so it stays
+// in the tab strip alongside the new YouTube group. Multiple persona
+// groups coexisting is a feature, not a bug.
 // "Release" = ungroup the member tabs (which removes the Chrome group
 // when empty) AND clear the entry from storage so we don't try to
 // re-attach to a dead groupId next time.
-async function releaseStalePersonaGroups(currentArchetypeId) {
+async function releaseStalePersonaGroups(_currentArchetypeId) {
   const tracked = await T.storage.getPersonaGroups();
   for (const [archetypeId, byWindow] of Object.entries(tracked || {})) {
-    const isOther = archetypeId !== currentArchetypeId;
     for (const [windowId, groupId] of Object.entries(byWindow || {})) {
       let tabsInGroup = [];
       try {
@@ -613,8 +628,7 @@ async function releaseStalePersonaGroups(currentArchetypeId) {
       } catch (_e) {
         // Group might not exist anymore; fall through to storage cleanup.
       }
-      const shouldRelease = isOther || tabsInGroup.length < 2;
-      if (!shouldRelease) continue;
+      if (tabsInGroup.length >= 2) continue;
 
       if (tabsInGroup.length > 0) {
         try {
@@ -822,6 +836,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       .catch((err) => sendResponse({ ok: false, error: String(err) }));
     return true;
   }
+  if (msg && msg.type === "CLOSE_PERSONA_GROUPS") {
+    // Close every tab inside every tracked persona group. Used by the
+    // popup's "Close persona groups" action. Returns { closed: N,
+    // groupCount: M } so the caller can show a sensible success label.
+    closePersonaGroups()
+      .then((res) => sendResponse({ ok: true, ...res }))
+      .catch((err) => sendResponse({ ok: false, error: String(err) }));
+    return true;
+  }
   if (msg && msg.type === "CLOSE_BY_DOMAIN") {
     cleanupGated("smartCleanupByDomain", () => closeTabsByDomain(msg.domain))
       .then((res) => sendResponse({ ok: true, ...res }))
@@ -983,6 +1006,41 @@ async function closeAllFromDomain(domain) {
   await new Promise((resolve) => chrome.tabs.remove(idsToClose, () => resolve()));
   await reconcileWithOpenTabs();
   return idsToClose.length;
+}
+
+// Closes every tab inside every tracked persona tab group. Pinned tabs
+// are preserved as a safety net. Returns { closed, groupCount } so the
+// UI can show "Closed 7 tabs across 2 groups ✓".
+async function closePersonaGroups() {
+  const tracked = await T.storage.getPersonaGroups();
+  const groupIds = [];
+  for (const [, byWindow] of Object.entries(tracked || {})) {
+    for (const [, groupId] of Object.entries(byWindow || {})) {
+      if (groupId != null) groupIds.push(groupId);
+    }
+  }
+  if (groupIds.length === 0) return { closed: 0, groupCount: 0 };
+
+  const idsToClose = new Set();
+  for (const gid of groupIds) {
+    let tabsInGroup = [];
+    try {
+      tabsInGroup = await tabsQueryByGroupId(gid);
+    } catch (_e) { /* group might no longer exist */ }
+    for (const t of tabsInGroup) {
+      if (t.pinned) continue;
+      idsToClose.add(t.id);
+    }
+  }
+
+  if (idsToClose.size > 0) {
+    await new Promise((resolve) =>
+      chrome.tabs.remove(Array.from(idsToClose), () => resolve())
+    );
+  }
+  await T.storage.clearAllPersonaGroups().catch(() => {});
+  await reconcileWithOpenTabs();
+  return { closed: idsToClose.size, groupCount: groupIds.length };
 }
 
 // Pro hooks (always blocked in v1 because isPremium = false). Implemented

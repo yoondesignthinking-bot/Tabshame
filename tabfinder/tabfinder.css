@@ -114,9 +114,19 @@ html, body {
   left: 18px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 18px;
-  opacity: 0.55;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-soft);
   pointer-events: none;
+}
+
+.search-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 .search-input {
   width: 100%;
@@ -256,6 +266,21 @@ html, body {
   outline: none;
   border-color: var(--peach);
   box-shadow: 0 0 0 3px rgba(255, 137, 102, 0.25);
+}
+
+/* Fired when chrome.tabs.update returns no tab — usually the target tab
+   has been closed between index-time and click-time. Pulse the row red
+   so the user gets a clear "that tab is gone" signal before the row is
+   removed on the next render. */
+.tab-tile.tab-tile-gone {
+  animation: tabGoneFlash 0.7s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes tabGoneFlash {
+  0% { background: var(--paper-elev); }
+  20% { background: var(--shame); color: var(--paper); }
+  100% { background: var(--paper-elev); opacity: 0.2; transform: translateX(-4px); }
 }
 
 .tab-tile-fav {
